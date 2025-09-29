@@ -1,0 +1,81 @@
+/* ------------------------
+   Container Table
+------------------------- */
+.table-container {
+  width: 100%;
+  max-height: 70vh; /* Biar tabel scrollable */
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+/* ------------------------
+   Table Layout
+------------------------- */
+table {
+  table-layout: fixed; /* Kolom rata & seragam */
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px !important;
+  font-size: 13px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ------------------------
+   Sticky Header & Filter
+------------------------- */
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #000000; /* header biru */
+  color: white;
+  z-index: 10;
+}
+
+.table thead tr:nth-child(2) th {
+  top: 40px; /* sticky filter bar */
+  background-color: #f8f9fa;
+  /* z-index: 9; */
+}
+
+/* ------------------------
+   Resize Handle
+------------------------- */
+.resize-handle {
+  display: inline-block;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent; /* default transparan */
+}
+.resize-handle:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ------------------------
+   Utility & Panel
+------------------------- */
+thead.sticky-top {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-group .btn {
+  margin: 0 2px;
+}
+
+.card-column-panel {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 8px;
+  background-color: #fff;
+}
