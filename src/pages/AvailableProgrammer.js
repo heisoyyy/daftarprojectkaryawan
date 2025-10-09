@@ -5,7 +5,8 @@ import { FaFileExcel, FaFileCsv } from "react-icons/fa";
 import Select from "react-select";
 import * as XLSX from "xlsx";
 
-// 🎯 Daftar libur nasional
+
+// 🎯 Daftar libur nasional (contoh - update sesuai kebutuhan)
 const HOLIDAYS = [
   "2025-01-01",
   "2025-03-31",
@@ -15,7 +16,6 @@ const HOLIDAYS = [
   "2025-12-25",
 ];
 
-// 🔄 Helper parseDate
 const parseDate = (val) => {
   if (!val) return null;
   if (typeof val === "string") {
@@ -29,7 +29,53 @@ const parseDate = (val) => {
       return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
     }
   }
-  return new Date(val);
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const startOfDay = (d) => {
+  if (!d) return null;
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
+const tomorrow = () => {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  t.setDate(t.getDate() + 1);
+  return t;
+};
+
+const formatDate = (date) => {
+  if (!date) return "-";
+  return startOfDay(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+  });
+};
+
+const isHoliday = (date) => {
+  const day = date.getDay();
+  const iso = startOfDay(date).toISOString().split("T")[0];
+  return day === 0 || day === 6 || HOLIDAYS.includes(iso);
+};
+
+const countWorkdays = (start, end) => {
+  let workdays = 0;
+  let cur = new Date(startOfDay(start));
+  const e = startOfDay(end);
+  while (cur <= e) {
+    if (!isHoliday(cur)) workdays++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return workdays;
+};
+
+const endOfYearFor = (date) => {
+  const y = date.getFullYear();
+  return new Date(y, 11, 31, 0, 0, 0, 0);
 };
 
 export default function AvailableProgrammer() {
@@ -56,32 +102,8 @@ export default function AvailableProgrammer() {
     fetchData();
   }, []);
 
-  const formatDate = (date) => {
-    if (!date) return "-";
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "2-digit",
-    });
-  };
+  const currentYear = new Date().getFullYear();
 
-  const isHoliday = (date) => {
-    const day = date.getDay();
-    const iso = date.toISOString().split("T")[0];
-    return day === 0 || day === 6 || HOLIDAYS.includes(iso);
-  };
-
-  const countWorkdays = (start, end) => {
-    let workdays = 0;
-    let cur = new Date(start);
-    while (cur <= end) {
-      if (!isHoliday(cur)) workdays++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return workdays;
-  };
-
-  // Filter projects by PIC & Status
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
       const matchPic = selectedPic.length === 0 || selectedPic.includes(p.picName || "(No PIC)");
@@ -90,8 +112,8 @@ export default function AvailableProgrammer() {
     });
   }, [projects, selectedPic, selectedStatus]);
 
-  // 🔵 Detailed Rows (Available)
-  const detailedRows = useMemo(() => {
+  // ----------------- All Available (hanya tahun berjalan) -----------------
+  const allAvailableSlots = useMemo(() => {
     const byPic = filteredProjects.reduce((acc, p) => {
       const key = p.picName || "(No PIC)";
       if (!acc[key]) acc[key] = [];
@@ -99,130 +121,151 @@ export default function AvailableProgrammer() {
       return acc;
     }, {});
 
-    const result = [];
+    const tmr = tomorrow();
+    const results = [];
+
     Object.entries(byPic).forEach(([pic, list]) => {
-      const sorted = list
-        .map((p) => ({ start: parseDate(p.startDate), end: parseDate(p.endDate) }))
-        .filter((d) => d.start && d.end)
+      const projRanges = list
+        .map((p) => ({
+          start: parseDate(p.startDate),
+          end: parseDate(p.endDate),
+          raw: p,
+        }))
+        .filter((r) => r.start && r.end && !isNaN(r.start.getTime()) && !isNaN(r.end.getTime()))
         .sort((a, b) => a.start - b.start);
 
-      let today = new Date();
-      let availableStart = new Date(today);
-      availableStart.setDate(today.getDate() + 1);
+      let availableStart = new Date(tmr);
 
-      sorted.forEach((proj) => {
+      projRanges.forEach((proj) => {
+        if (availableStart <= tmr) availableStart = new Date(tmr);
+
         if (proj.start > availableStart) {
-          let availableEnd = new Date(proj.start);
-          availableEnd.setDate(proj.start.getDate() - 1);
-          if (availableStart <= availableEnd) {
-            result.push({
+          const availableEnd = new Date(startOfDay(proj.start));
+          availableEnd.setDate(availableEnd.getDate() - 1);
+
+          if (availableStart <= availableEnd && availableEnd.getFullYear() === currentYear) {
+            results.push({
               pic,
-              start: new Date(availableStart),
-              end: new Date(availableEnd),
+              start: startOfDay(availableStart),
+              end: startOfDay(availableEnd),
               workdays: countWorkdays(availableStart, availableEnd),
             });
           }
         }
-        availableStart = new Date(proj.end);
-        availableStart.setDate(proj.end.getDate() + 1);
+
+        let nextStart = new Date(startOfDay(proj.end));
+        nextStart.setDate(nextStart.getDate() + 1);
+        if (nextStart <= tmr) nextStart = new Date(tmr);
+        if (nextStart > availableStart) availableStart = new Date(nextStart);
       });
 
-      // Slot terakhir sampai akhir tahun proyek, otomatis pindah ke tahun berikut jika perlu
-      const lastSlotEndYear = availableStart.getFullYear();
-      const lastEnd = new Date(lastSlotEndYear, 11, 31); // 31 Desember tahun yang sesuai
-      result.push({
-        pic,
-        start: availableStart,
-        end: lastEnd,
-        workdays: countWorkdays(availableStart, lastEnd),
-      });
-    });
+      if (availableStart) {
+        if (availableStart <= tmr) availableStart = new Date(tmr);
 
-    return result.sort((a, b) => a.pic === b.pic ? a.start - b.start : a.pic.localeCompare(b.pic));
-  }, [filteredProjects]);
-
-  // 🔵 Nearest Rows (ambil available terdekat per PIC)
-  const nearestRows = useMemo(() => {
-    const firstAvailablePerPic = {};
-    const today = new Date();
-
-    detailedRows.forEach((r) => {
-      if (r.end < today) return; // skip yang sudah lewat
-      if (!firstAvailablePerPic[r.pic] || r.start < firstAvailablePerPic[r.pic].start) {
-        firstAvailablePerPic[r.pic] = r;
+        const lastEnd = endOfYearFor(availableStart);
+        if (availableStart <= lastEnd && lastEnd.getFullYear() === currentYear) {
+          results.push({
+            pic,
+            start: startOfDay(availableStart),
+            end: startOfDay(lastEnd),
+            workdays: countWorkdays(availableStart, lastEnd),
+          });
+        }
       }
     });
 
-    return Object.values(firstAvailablePerPic).sort((a, b) => a.start - b.start);
-  }, [detailedRows]);
+    results.sort((a, b) => (a.pic === b.pic ? a.start - b.start : a.pic.localeCompare(b.pic)));
+    return results;
+  }, [filteredProjects]);
 
-  // 🔹 Popover multi-slot
-  const getNextAvailabilitiesPopover = (pic) => {
-    const today = new Date();
-    const picSlots = detailedRows
-      .filter((r) => r.pic === pic)
-      .filter((r) => r.end >= today) // hanya slot yang belum lewat
+  // ----------------- Nearest -----------------
+  const nearestSlots = useMemo(() => {
+    const firstPerPic = {};
+    const tmr = tomorrow();
+    allAvailableSlots.forEach((slot) => {
+      if (slot.end < tmr) return;
+      const displayStart = slot.start < tmr ? new Date(tmr) : slot.start;
+      const normalized = { ...slot, start: startOfDay(displayStart) };
+      if (!firstPerPic[slot.pic] || normalized.start < firstPerPic[slot.pic].start) {
+        firstPerPic[slot.pic] = normalized;
+      }
+    });
+    return Object.values(firstPerPic).sort((a, b) => a.start - b.start);
+  }, [allAvailableSlots]);
+
+  const getPopoverForPic = (pic) => {
+    const tmr = tomorrow();
+    const upcoming = allAvailableSlots
+      .filter((s) => s.pic === pic && s.end >= tmr)
+      .sort((a, b) => a.start - b.start);
+
+    const past = allAvailableSlots
+      .filter((s) => s.pic === pic && s.end < tmr)
       .sort((a, b) => a.start - b.start);
 
     return (
-      <Popover
-        id={`popover-next-${pic}`}
-        style={{
-          maxWidth: "300px",
-          backgroundColor: "#000",
-          color: "#fff",
-          border: "1px solid #fff",
-        }}
-      >
-        <Popover.Header
-          as="h6"
-          className="text-center"
-          style={{ backgroundColor: "#000", color: "#fff", borderBottom: "1px solid #fff" }}
-        >
-          {pic} - Next Availabilities
+      <Popover id={`popover-${pic}`} style={{ maxWidth: 360, backgroundColor: "#000", color: "#fff" }}>
+        <Popover.Header as="h6" style={{ backgroundColor: "#000", color: "#fff", textAlign: "center" }}>
+          {pic} — Next / History
         </Popover.Header>
-        <Popover.Body style={{ fontSize: "0.85rem", backgroundColor: "#000", color: "#fff" }}>
-          {picSlots.length > 0 ? (
-            <table className="table table-sm table-borderless mb-0" style={{ color: "#fff" }}>
-              <thead>
-                <tr>
-                  <th>Start</th>
-                  <th>→</th>
-                  <th>End</th>
-                  <th>(WD)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {picSlots.map((slot, idx) => (
-                  <tr key={idx}>
-                    <td>{formatDate(slot.start)}</td>
-                    <td>→</td>
-                    <td>{formatDate(slot.end)}</td>
-                    <td>{slot.workdays}</td>
+        <Popover.Body style={{ backgroundColor: "#000", color: "#fff", fontSize: 13 }}>
+          {upcoming.length > 0 ? (
+            <>
+              <div style={{ marginBottom: 6, fontWeight: 700 }}>Next Availabilities</div>
+              <table className="table table-sm table-borderless mb-2" style={{ color: "#fff" }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 90 }}>Start</th>
+                    <th>→</th>
+                    <th style={{ width: 90 }}>End</th>
+                    <th style={{ width: 40 }}>(WD)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {upcoming.map((s, i) => (
+                    <tr key={i}>
+                      <td>{formatDate(s.start)}</td>
+                      <td>→</td>
+                      <td>{formatDate(s.end)}</td>
+                      <td>{s.workdays}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           ) : (
             <div className="text-center fw-bold">Sedang Menunggu</div>
+          )}
+
+          {past.length > 0 && (
+            <>
+              <div style={{ marginTop: 6, fontWeight: 700 }}>Past Availabilities</div>
+              <table className="table table-sm table-borderless mb-0" style={{ color: "#fff" }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 90 }}>Start</th>
+                    <th>→</th>
+                    <th style={{ width: 90 }}>End</th>
+                    <th style={{ width: 40 }}>(WD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {past.map((s, i) => (
+                    <tr key={i}>
+                      <td>{formatDate(s.start)}</td>
+                      <td>→</td>
+                      <td>{formatDate(s.end)}</td>
+                      <td>{s.workdays}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </Popover.Body>
       </Popover>
     );
   };
-
-  const allPics = useMemo(() => [...new Set(projects.map((p) => p.picName || "(No PIC)"))].sort(), [projects]);
-  const allStatuses = useMemo(() => [...new Set(projects.map((p) => p.status || "(No Status)"))].sort(), [projects]);
-
-  if (loading) return <div className="p-3">Loading…</div>;
-
-  const totalDetailed = detailedRows.reduce((sum, r) => sum + r.workdays, 0);
-  const totalNearest = nearestRows.reduce((sum, r) => sum + r.workdays, 0);
-
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentDetailedRows = detailedRows.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(detailedRows.length / rowsPerPage);
 
   const exportToExcel = (rows, filename) => {
     const ws = XLSX.utils.json_to_sheet(
@@ -239,32 +282,50 @@ export default function AvailableProgrammer() {
     XLSX.writeFile(wb, filename);
   };
 
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentDetailedRows = allAvailableSlots.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(allAvailableSlots.length / rowsPerPage);
+
+  const allPics = useMemo(() => [...new Set(projects.map((p) => p.picName || "(No PIC)"))].sort(), [projects]);
+  const allStatuses = useMemo(() => [...new Set(projects.map((p) => p.status || "(No Status)"))].sort(), [projects]);
+
+  if (loading) return <div className="p-3">Loading…</div>;
+
+  const totalNearest = nearestSlots.reduce((s, r) => s + r.workdays, 0);
+  const totalAll = allAvailableSlots.reduce((s, r) => s + r.workdays, 0);
+
   return (
     <div className="card shadow p-4" style={{ borderRadius: "16px" }}>
-      <h4 className="mb-3 text-dark fw-bold">Programmer Availability</h4>
+      <h4 className="mb-3 text-dark fw-bold">Programmer Availability ({currentYear})</h4>
 
-      {/* Filter */}
-      <div className="d-flex flex-column flex-md-row gap-3 mb-4">
-        <div style={{ flex: 1, minWidth: "200px" }}>
+      {/* Filters */}
+      <div className="d-flex flex-column flex-md-row gap-3 mb-3">
+        <div style={{ flex: 1, minWidth: 180 }}>
           <Select
             isMulti
             options={allPics.map((p) => ({ value: p, label: p }))}
             value={selectedPic.map((p) => ({ value: p, label: p }))}
-            onChange={(selected) => setSelectedPic(selected.map((s) => s.value))}
+            onChange={(sel) => setSelectedPic((sel || []).map((s) => s.value))}
             placeholder="Filter by PIC..."
             menuPortalTarget={document.body}
-            styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 })
+              }}
           />
         </div>
-        <div style={{ flex: 1, minWidth: "200px" }}>
+
+        <div style={{ flex: 1, minWidth: 180 }}>
           <Select
             isMulti
             options={allStatuses.map((s) => ({ value: s, label: s }))}
             value={selectedStatus.map((s) => ({ value: s, label: s }))}
-            onChange={(selected) => setSelectedStatus(selected.map((s) => s.value))}
+            onChange={(sel) => setSelectedStatus((sel || []).map((s) => s.value))}
             placeholder="Filter by Status..."
             menuPortalTarget={document.body}
-            styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 })
+              }}
           />
         </div>
       </div>
@@ -274,13 +335,14 @@ export default function AvailableProgrammer() {
         {/* Nearest */}
         <Tab eventKey="nearest" title="Nearest">
           <div className="d-flex justify-content-end mb-2 gap-2">
-            <Button variant="success" size="sm" onClick={() => exportToExcel(nearestRows, "Nearest.xlsx")}>
+            <Button variant="success" size="sm" onClick={() => exportToExcel(nearestSlots, "Nearest.xlsx")}>
               <FaFileExcel /> Excel
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => exportToExcel(nearestRows, "Nearest.csv")}>
+            <Button variant="secondary" size="sm" onClick={() => exportToExcel(nearestSlots, "Nearest.csv")}>
               <FaFileCsv /> CSV
             </Button>
           </div>
+
           <table className="table table-bordered table-hover text-center align-middle table-striped shadow-sm">
             <thead className="table-dark">
               <tr>
@@ -291,19 +353,15 @@ export default function AvailableProgrammer() {
                 <th>Workdays</th>
               </tr>
             </thead>
-            <tbody>
-              {nearestRows.length > 0 ? (
+            <tbody className="table-light">
+              {nearestSlots.length > 0 ? (
                 <>
-                  {nearestRows.map((r, idx) => (
+                  {nearestSlots.map((r, idx) => (
                     <tr key={idx}>
                       <td>{idx + 1}</td>
                       <td>
-                        <OverlayTrigger
-                          trigger={["hover", "focus"]}
-                          placement="top"
-                          overlay={getNextAvailabilitiesPopover(r.pic)}
-                        >
-                          <span style={{ cursor: "pointer" }}>{r.pic}</span>
+                        <OverlayTrigger trigger={["hover", "focus"]} placement="top" overlay={getPopoverForPic(r.pic)}>
+                          <span style={{ cursor: "pointer", color: "#000" }}>{r.pic}</span>
                         </OverlayTrigger>
                       </td>
                       <td>{formatDate(r.start)}</td>
@@ -323,17 +381,18 @@ export default function AvailableProgrammer() {
           </table>
         </Tab>
 
-        {/* Available */}
-        <Tab eventKey="available" title="Available">
+        {/* All Available */}
+        <Tab eventKey="all" title="All Available">
           <div className="d-flex justify-content-end mb-2 gap-2">
-            <Button variant="success" size="sm" onClick={() => exportToExcel(detailedRows, "Available.xlsx")}>
+            <Button variant="success" size="sm" onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.xlsx")}>
               <FaFileExcel /> Excel
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => exportToExcel(detailedRows, "Available.csv")}>
+            <Button variant="secondary" size="sm" onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.csv")}>
               <FaFileCsv /> CSV
             </Button>
           </div>
-          <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+
+          <div style={{ maxHeight: 420, overflowY: "auto" }}>
             <table className="table table-bordered table-hover text-center align-middle table-striped shadow-sm">
               <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
                 <tr>
@@ -344,44 +403,56 @@ export default function AvailableProgrammer() {
                   <th>Workdays</th>
                 </tr>
               </thead>
-              <tbody>
-                {currentDetailedRows.length > 0 ? (
-                  <>
-                    {currentDetailedRows.map((r, idx) => (
-                      <tr key={idx}>
-                        <td>{indexOfFirstRow + idx + 1}</td>
-                        <td>
-                          <OverlayTrigger
-                            trigger={["hover", "focus"]}
-                            placement="top"
-                            overlay={getNextAvailabilitiesPopover(r.pic)}
-                          >
-                            <span style={{ cursor: "pointer" }}>{r.pic}</span>
-                          </OverlayTrigger>
-                        </td>
+              <tbody className="table-light">
+              {(() => {
+                const grouped = currentDetailedRows.reduce((acc, item) => {
+                  acc[item.pic] = acc[item.pic] || [];
+                  acc[item.pic].push(item);
+                  return acc;
+                }, {});
+
+                const rows = [];
+                let rowIndex = indexOfFirstRow;
+                Object.entries(grouped).forEach(([pic, items]) => {
+                  items.forEach((r, idx) => {
+                    rows.push(
+                      <tr key={`${pic}-${idx}`}>
+                        <td>{rowIndex + 1}</td>
+                        {idx === 0 && (
+                          <td rowSpan={items.length}>
+                            <OverlayTrigger trigger={["hover", "focus"]} placement="top" overlay={getPopoverForPic(pic)}>
+                              <span style={{ cursor: "pointer", color: "#000" }}>{pic}</span>
+                            </OverlayTrigger>
+                          </td>
+                        )}
                         <td>{formatDate(r.start)}</td>
                         <td>{formatDate(r.end)}</td>
                         <td>{r.workdays}</td>
                       </tr>
-                    ))}
+                    );
+                    rowIndex++;
+                  });
+                });
+
+                return (
+                  <>
+                    {rows}
                     <tr className="table-dark fw-bold">
                       <td colSpan={4}>TOTAL</td>
-                      <td>{totalDetailed}</td>
+                      <td>{totalAll}</td>
                     </tr>
                   </>
-                ) : (
-                  <tr><td colSpan={5}>No data available</td></tr>
-                )}
-              </tbody>
+                );
+              })()}
+            </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="d-flex justify-content-between align-items-center mt-3">
-              <Button size="sm" variant="outline-dark" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+              <Button size="sm" variant="outline-dark" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>Previous</Button>
               <span>Page {currentPage} of {totalPages}</span>
-              <Button size="sm" variant="outline-dark" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+              <Button size="sm" variant="outline-dark" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>Next</Button>
             </div>
           )}
         </Tab>

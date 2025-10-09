@@ -1,0 +1,11 @@
+.btn-toggle-sidebar {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-toggle-sidebar:hover {
+  color: #ffc107;
+}

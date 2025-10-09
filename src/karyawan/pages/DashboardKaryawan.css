@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.task-list-container {
+  @apply bg-white rounded-lg p-6 shadow-md max-w-full overflow-hidden;
+}
+
+.task-list-title {
+  @apply mb-4 text-gray-800 text-lg font-semibold;
+}
+
+.table-container {
+  @apply overflow-x-auto overflow-y-auto max-h-[600px] border border-gray-200 rounded;
+}
+
+.task-table {
+  @apply w-full min-w-full border-collapse text-sm table-auto;
+}
+
+.task-table-header {
+  @apply bg-black text-white sticky top-0 z-10;
+}
+
+.task-table-th {
+  @apply p-3 border border-gray-200 whitespace-nowrap overflow-hidden text-ellipsis;
+}
+
+.task-table-th:nth-child(2) {
+  @apply min-w-[200px] max-w-[300px] text-left;
+}
+
+.task-table-th:nth-child(3) {
+  @apply min-w-[150px] max-w-[200px] text-left;
+}
+
+.task-table-th:nth-child(4), .task-table-th:nth-child(5) {
+  @apply min-w-[120px] max-w-[150px] text-left;
+}
+
+.task-table-th:nth-child(6) {
+  @apply min-w-[100px] max-w-[120px] text-center;
+}
+
+.sticky-col {
+  @apply sticky left-0 z-10 bg-inherit;
+}
+
+.task-table-th.sticky-col {
+  @apply bg-black;
+}
+
+.task-table-row-even {
+  @apply bg-gray-50;
+}
+
+.task-table-row-odd {
+  @apply bg-white;
+}
+
+.task-table-td {
+  @apply p-3 border border-gray-200 whitespace-nowrap overflow-hidden text-ellipsis;
+}
+
+.task-table-td.text-center {
+  @apply text-center;
+}
+
+.task-table-no-data {
+  @apply p-5 text-center text-gray-500 border border-gray-200;
+}

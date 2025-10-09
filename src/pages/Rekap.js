@@ -27,7 +27,7 @@ export default function Rekap() {
     fetchData();
   }, []);
 
-  // Grouping logic + filter
+  // Grouping logic + filter with merge cell support
   const rows = useMemo(() => {
     const grouped = {};
     projects.forEach((p) => {
@@ -50,33 +50,39 @@ export default function Rekap() {
     Object.entries(byPic).forEach(([pic, statuses]) => {
       if (picFilter.length > 0 && !picFilter.includes(pic)) return;
 
-      statuses.forEach((s, idx) => {
-        if (statusFilter.length > 0 && !statusFilter.includes(s.status)) return;
+      // Filter berdasarkan status
+      let filteredStatuses = statuses;
+      if (statusFilter.length > 0) {
+        filteredStatuses = statuses.filter((s) => statusFilter.includes(s.status));
+      }
 
+      if (filteredStatuses.length === 0) return;
+
+      // Hitung rowSpan berdasarkan jumlah status + 1 untuk total
+      const rowSpan = filteredStatuses.length + 1;
+
+      // Tambahkan semua status
+      filteredStatuses.forEach((s, idx) => {
         result.push({
           nomor: idx === 0 ? nomor : "",
           pic: idx === 0 ? pic : "",
           status: s.status,
           count: s.count,
+          rowSpan,
           isTotal: false,
         });
       });
 
-      const filteredStatuses =
-        statusFilter.length > 0
-          ? statuses.filter((s) => statusFilter.includes(s.status))
-          : statuses;
+      // Tambahkan total di akhir
+      result.push({
+        nomor: "",
+        pic: "",
+        status: "TOTAL",
+        count: filteredStatuses.reduce((sum, s) => sum + s.count, 0),
+        isTotal: true,
+      });
 
-      if (filteredStatuses.length > 0) {
-        result.push({
-          nomor: "",
-          pic: "",
-          status: "TOTAL",
-          count: filteredStatuses.reduce((sum, s) => sum + s.count, 0),
-          isTotal: true,
-        });
-        nomor++;
-      }
+      nomor++;
     });
 
     return result;
@@ -188,19 +194,38 @@ export default function Rekap() {
             <th style={{ width: "5%" }}>No</th>
             <th style={{ width: "25%" }}>PIC Name</th>
             <th style={{ width: "30%" }}>Status</th>
-            <th style={{ width: "10%" }}>Count of Project</th>
+            <th style={{ width: "10%" }}>Jumlah Project</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="table-light">
           {rows.length > 0 ? (
             rows.map((row, idx) => (
               <tr
                 key={idx}
-                className={row.isTotal ? "table-secondary fw-bold" : ""}
+                className={row.isTotal ? "table-warning fw-bold" : ""}
               >
-                <td className={row.nomor ? "fw-bold" : ""}>{row.nomor}</td>
-                <td className={row.pic ? "fw-bold" : ""}>{row.pic}</td>
+                {/* No - hanya di baris pertama dengan rowSpan */}
+                {row.nomor && (
+                  <td
+                    rowSpan={row.rowSpan}
+                    className="fw-bold align-middle"
+                  >
+                    {row.nomor}
+                  </td>
+                )}
+                {/* PIC Name - hanya di baris pertama dengan rowSpan */}
+                {row.pic && (
+                  <td
+                    rowSpan={row.rowSpan}
+                    className="fw-bold text-start align-middle"
+                    style={{ paddingLeft: "15px" }}
+                  >
+                    {row.pic}
+                  </td>
+                )}
+                {/* Status */}
                 <td>{row.status}</td>
+                {/* Count */}
                 <td>{row.count}</td>
               </tr>
             ))

@@ -31,19 +31,24 @@ const allColumns = [
   { key: "category3", label: "Category 3" },
   { key: "target", label: "Target" },
   { key: "progress", label: "Progress" },
-  { key: "col1", label: "Januari" },
-  { key: "col2", label: "Februari" },
-  { key: "col3", label: "Maret" },
-  { key: "col4", label: "April" },
+  { key: "col1", label: "Jan" },
+  { key: "col2", label: "Feb" },
+  { key: "col3", label: "Mar" },
+  { key: "col4", label: "Apr" },
   { key: "col5", label: "Mei" },
-  { key: "col6", label: "Juni" },
-  { key: "col7", label: "Juli" },
-  { key: "col8", label: "Agustus" },
-  { key: "col9", label: "September" },
-  { key: "col10", label: "Oktober" },
-  { key: "col11", label: "November" },
-  { key: "col12", label: "Desember" },
+  { key: "col6", label: "Jun" },
+  { key: "col7", label: "Jul" },
+  { key: "col8", label: "Agu" },
+  { key: "col9", label: "Sep" },
+  { key: "col10", label: "Okt" },
+  { key: "col11", label: "Nov" },
+  { key: "col12", label: "Des" },
   { key: "keterangan", label: "Keterangan" },
+];
+
+const monthNames = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
 
 export default function Home() {
@@ -55,7 +60,7 @@ export default function Home() {
   const [columnWidths, setColumnWidths] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   useEffect(() => {
     loadUser();
@@ -63,7 +68,11 @@ export default function Home() {
     const initWidths = {};
     allColumns.forEach((col) => {
       initCols[col.key] = true;
-      initWidths[col.key] = 150;
+      if (col.key.startsWith("col")) {
+        initWidths[col.key] = 60;
+      } else {
+        initWidths[col.key] = 150;
+      }
     });
     setVisibleColumns(initCols);
     setColumnWidths(initWidths);
@@ -79,15 +88,16 @@ export default function Home() {
   };
 
   const deleteUser = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/user/${id}`);
-      loadUser();
-    } catch (error) {
-      console.error("Error deleting user:", error);
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      try {
+        await axios.delete(`http://localhost:8080/user/${id}`);
+        loadUser();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
     }
   };
 
-  // 🔹 Parse tanggal untuk sort/filter kronologis
   const parseDateSortable = (dateStr) => {
     if (!dateStr) return null;
     let parts;
@@ -107,19 +117,25 @@ export default function Home() {
     return null;
   };
 
+  const parseMonth = (dateStr) => {
+    const d = parseDateSortable(dateStr);
+    return d ? d.getMonth() + 1 : null;
+  };
+
   const getUniqueValues = (key) => {
-    let values = users.map(u => u[key]).filter(Boolean);
-    const dateKeys = ["receiveDate","startDate","endDate","tglSit","tglUat"];
+    const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+    
     if (dateKeys.includes(key)) {
-      // Urutkan ascending kronologis
-      values = values
-        .map(v => ({ raw: v, date: parseDateSortable(v) }))
-        .sort((a,b) => a.date - b.date)
-        .map(v => v.raw);
+      const months = users
+        .map(u => parseMonth(u[key]))
+        .filter(m => m !== null);
+      const uniqueMonths = [...new Set(months)].sort((a, b) => a - b);
+      return uniqueMonths;
     } else {
+      let values = users.map(u => u[key]).filter(Boolean);
       values = [...new Set(values)].sort();
+      return values;
     }
-    return [...new Set(values)];
   };
 
   const handleFilterChange = (col, selected) => {
@@ -146,7 +162,15 @@ export default function Home() {
 
     const matchFilters = Object.entries(filters).every(([key, vals]) => {
       if (!vals || vals.length === 0) return true;
-      return vals.includes(user[key]);
+      
+      const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+      
+      if (dateKeys.includes(key)) {
+        const userMonth = parseMonth(user[key]);
+        return vals.includes(userMonth);
+      } else {
+        return vals.includes(user[key]);
+      }
     });
 
     return matchSearch && matchFilters;
@@ -217,6 +241,8 @@ export default function Home() {
     } catch (error) {
       console.error("Error importing CSV:", error);
       alert("Gagal import CSV");
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -248,20 +274,51 @@ export default function Home() {
     }
   };
 
-  const parseMonth = (dateStr) => {
-    const d = parseDateSortable(dateStr);
-    return d ? d.getMonth() + 1 : null;
+  const handleResize = (colKey, width) => {
+    setColumnWidths(prev => ({ ...prev, [colKey]: Math.max(width, 50) }));
   };
 
-  const handleResize = (colKey, width) => {
-    setColumnWidths(prev => ({ ...prev, [colKey]: Math.max(width, 80) }));
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pageNumbers.push(i);
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pageNumbers.push(i);
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        pageNumbers.push(currentPage - 1);
+        pageNumbers.push(currentPage);
+        pageNumbers.push(currentPage + 1);
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  const goToPage = (pageNum) => {
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+    }
   };
 
   return (
-    <div className="container-fluid py-4">
-      <h3 className="mb-4 text-center">Project Dashboard</h3>
+    <div className="card p-3 shadow py-4">
+      <h3 className="mb-4 text-center">Dashboard Development</h3>
 
-      {/* Buttons & Dropdowns */}
       <div className="d-flex justify-content-between mb-3 flex-wrap align-items-center">
         <div className="d-flex gap-2 mb-2">
           <Link className="btn btn-primary" to="/adduser">Add</Link>
@@ -296,10 +353,9 @@ export default function Home() {
           </Dropdown>
         </div>
 
-        <Button variant="outline-danger" className="mb-2" onClick={clearFilters}>❌ Clear Filters</Button>
+        <Button variant="outline-danger" className="mb-2" onClick={clearFilters}>Clear Filters</Button>
       </div>
 
-      {/* Column Panel */}
       <div className="mb-3">
         <button className="btn btn-outline-primary" onClick={() => setShowColumnPanel(!showColumnPanel)}>
           Show/Hide Columns
@@ -321,23 +377,31 @@ export default function Home() {
         )}
       </div>
 
-      {/* Search */}
-      <div className="mb-3">
-        <input type="text" className="form-control" placeholder="Search..." value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }} />
+      <div className="row mb-3">
+        <div className="col-md-9">
+          <input type="text" className="form-control" placeholder="Search..." value={search}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }} />
+        </div>
+        <div className="col-md-3">
+          <select className="form-select" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+        </div>
       </div>
 
-      {/* Table */}
       <div className="table-responsive table-container">
         <table className="table table-bordered table-hover table-sm align-middle text-center">
-          <thead className="sticky-top bg-primary text-white">
+          <thead className="sticky-top text-white">
             <tr>
               <th style={{ width: "50px" }}>No</th>
               {allColumns.map(col => visibleColumns[col.key] && (
                 <th key={col.key} style={{ width: columnWidths[col.key], cursor: "pointer" }} onClick={() => handleSort(col.key)}>
                   <ResizableBox width={columnWidths[col.key]} height={20} axis="x" resizeHandles={["e"]}
                     onResizeStop={(e, data) => handleResize(col.key, data.size.width)}>
-                    <div style={{ width: "100%" }}>
+                    <div style={{ width: "100%", fontSize: col.key.startsWith("col") ? "11px" : "14px" }}>
                       {col.label} {sortConfig.key === col.key ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                     </div>
                   </ResizableBox>
@@ -348,28 +412,47 @@ export default function Home() {
 
             <tr className="bg-light">
               <th></th>
-              {allColumns.map(col => visibleColumns[col.key] && (
-                <th key={col.key}>
-                  {col.key.startsWith("col") ? null : (
-                    <Select
-                      isMulti
-                      options={getUniqueValues(col.key).map(val => ({ value: val, label: val }))}
-                      value={filters[col.key]?.map(v => ({ value: v, label: v })) || []}
-                      onChange={selected => handleFilterChange(col.key, selected)}
-                      placeholder="Filter..."
-                      menuPortalTarget={document.body}
-                      styles={{
-                        menuPortal: base => ({ ...base, zIndex: 9999 }),
-                        container: base => ({ ...base, minWidth: "120px", fontSize: "12px" }),
-                      }}
-                    />
-                  )}
-                </th>
-              ))}
+              {allColumns.map(col => {
+                if (!visibleColumns[col.key]) return null;
+                
+                const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+                const isDateColumn = dateKeys.includes(col.key);
+                
+                return (
+                  <th key={col.key}>
+                    {col.key.startsWith("col") ? null : (
+                      <Select
+                        isMulti
+                        options={getUniqueValues(col.key).map(val => {
+                          if (isDateColumn) {
+                            return { value: val, label: monthNames[val - 1] };
+                          } else {
+                            return { value: val, label: val };
+                          }
+                        })}
+                        value={filters[col.key]?.map(v => {
+                          if (isDateColumn) {
+                            return { value: v, label: monthNames[v - 1] };
+                          } else {
+                            return { value: v, label: v };
+                          }
+                        }) || []}
+                        onChange={selected => handleFilterChange(col.key, selected)}
+                        placeholder="Filter..."
+                        menuPortalTarget={document.body}
+                        styles={{
+                          menuPortal: base => ({ ...base, zIndex: 9999 }),
+                          container: base => ({ ...base, minWidth: "120px", fontSize: "12px" }),
+                        }}
+                      />
+                    )}
+                  </th>
+                );
+              })}
               <th>Aksi</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="table-light">
             {currentUsers.map((user, index) => {
               const startMonth = parseMonth(user.startDate);
               const endMonth = parseMonth(user.endDate);
@@ -378,7 +461,7 @@ export default function Home() {
                 <tr key={user.id}>
                   <td>{indexOfFirstItem + index + 1}</td>
                   {allColumns.map(col => visibleColumns[col.key] && (
-                    <td key={col.key}>
+                    <td key={col.key} style={{ fontSize: col.key.startsWith("col") ? "10px" : "13px" }}>
                       {col.key.startsWith("col") ? (
                         <div style={{
                           backgroundColor:
@@ -386,7 +469,7 @@ export default function Home() {
                             endMonth === parseInt(col.key.replace("col",""))
                               ? "yellow"
                               : "white",
-                          width: "100%", height: "25px"
+                          width: "100%", height: "20px", minWidth: "40px"
                         }} />
                       ) : col.key === "progress" ? (
                         user[col.key] ? `${user[col.key]}%` : ""
@@ -407,21 +490,60 @@ export default function Home() {
             })}
             {filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={allColumns.length + 2} className="text-center">No matching data found</td>
+                <td colSpan={allColumns.filter(c => visibleColumns[c.key]).length + 2} className="text-center">No matching data found</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
       {filteredUsers.length > 0 && (
-        <div className="d-flex justify-content-between align-items-center mt-2">
-          <span>Page {currentPage} of {totalPages}</span>
-          <div>
-            <button className="btn btn-sm btn-primary me-2" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev -1)}>Prev</button>
-            <button className="btn btn-sm btn-primary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev +1)}>Next</button>
+        <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+          <div className="mb-2">
+            <span className="text-muted">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedUsers.length)} of {sortedUsers.length} entries
+            </span>
           </div>
+          
+          <nav aria-label="Page navigation">
+            <ul className="pagination pagination-sm mb-2">
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => goToPage(1)} disabled={currentPage === 1}>
+                  First
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                  Prev
+                </button>
+              </li>
+              
+              {getPageNumbers().map((pageNum, idx) => (
+                pageNum === '...' ? (
+                  <li key={`ellipsis-${idx}`} className="page-item disabled">
+                    <span className="page-link">...</span>
+                  </li>
+                ) : (
+                  <li key={pageNum} className={`page-item ${currentPage === pageNum ? 'active' : ''}`}>
+                    <button className="page-link" onClick={() => goToPage(pageNum)}>
+                      {pageNum}
+                    </button>
+                  </li>
+                )
+              ))}
+              
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                  Next
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages}>
+                  Last
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
       )}
     </div>

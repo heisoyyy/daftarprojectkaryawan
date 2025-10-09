@@ -79,3 +79,24 @@ thead.sticky-top {
   padding: 8px;
   background-color: #fff;
 }
+/* ------------------------
+   Kolom Bulan (col1-col12)
+------------------------- */
+th[data-col^="col"], 
+td[data-col^="col"] {
+  width: 75px !important;   /* semua col1-12 fix 75px */
+  min-width: 75px !important;
+  max-width: 75px !important;
+}
+
+/* Supaya beda tampilan dari kolom utama */
+th[data-col^="col"] {
+  background-color: #343a40; /* abu gelap */
+  color: #fff;
+  font-size: 12px;
+}
+
+td[data-col^="col"] {
+  background-color: #fafafa; /* abu muda */
+}
+

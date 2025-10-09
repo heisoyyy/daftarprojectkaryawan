@@ -1,0 +1,117 @@
+/* src/pages/Settings.css */
+.settings-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 30px;
+}
+
+.settings-header h3 {
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.settings-header p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Profile Card */
+.profile-icon {
+  font-size: 80px;
+  color: #667eea;
+}
+
+.card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 15px 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.card-header h5 {
+  color: #333;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 25px;
+}
+
+/* Form Styling */
+.form-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+/* Button */
+.btn-edit {
+  padding: 12px 30px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: rgb(40, 187, 255);
+  border: none;
+  transition: transform 0.2s ease;
+  color: #f0f0f0;
+}
+
+.btn-edit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(244, 0, 0, 0.3);
+}
+
+.btn-edit:disabled {
+  background: #00aaff;
+  transform: none;
+}
+
+/* Alert */
+.alert {
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Badge */
+.badge {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 15px;
+  }
+
+  .profile-icon {
+    font-size: 60px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+}
