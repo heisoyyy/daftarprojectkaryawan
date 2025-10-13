@@ -17,6 +17,7 @@ import Rekap from './pages/Rekap';
 import AvailableProgrammer from './pages/AvailableProgrammer';
 import Grafik from './pages/Grafik';
 import Settings from './pages/Settings';
+import Talon from './pages/Talon';
 
 // 👷‍♂️ Karyawan imports
 import NavbarKaryawan from './karyawan/k-layout/Navbar';
@@ -113,6 +114,7 @@ function AppContent() {
               <Route path="/available-programmer" element={<AvailableProgrammer />} />
               <Route path="/grafiks" element={<Grafik />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/talons" element={<Talon />} />
               <Route path="/adduser" element={<AddUser />} />
               <Route path="/edituser/:id" element={<EditUser />} />
               <Route path="/viewuser/:id" element={<ViewUser />} />

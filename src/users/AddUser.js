@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // 🔹 Utils konversi tanggal
@@ -24,7 +24,6 @@ const calculateWorkdays = (start, end) => {
   return count;
 };
 
-// 🔹 Hitung end date dari startDate + durasi kerja (exclude weekend)
 const calculateEndDate = (start, duration) => {
   let date = new Date(start);
   let daysAdded = 0;
@@ -35,7 +34,7 @@ const calculateEndDate = (start, duration) => {
     if (day !== 0 && day !== 6) daysAdded++;
   }
 
-  return date.toISOString().split("T")[0]; // YYYY-MM-DD
+  return date.toISOString().split("T")[0];
 };
 
 export default function AddUser() {
@@ -75,6 +74,54 @@ export default function AddUser() {
     keterangan: ""
   });
 
+  const [picNames, setPicNames] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  // 🔹 Fetch PIC names and statuses from database
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/users");
+        const projects = response.data || [];
+
+        // Extract unique picNames and statuses
+        const uniquePicNames = [...new Set(projects
+          .map(project => project.picName)
+          .filter(name => name && name.trim() !== ""))]
+          .sort();
+
+        const uniqueStatuses = [...new Set(projects
+          .map(project => project.status)
+          .filter(status => status && status.trim() !== ""))]
+          .sort();
+
+        setPicNames(uniquePicNames);
+        setStatuses(uniqueStatuses);
+      } catch (error) {
+        console.error("Error fetching options:", error);
+        // Fallback to default statuses
+        setPicNames([]);
+        setStatuses([
+          "Belum dikerjakan",
+          "Sedang dikerjakan",
+          "Hold",
+          "Ready SIT",
+          "Ready Testing",
+          "Ready UAT",
+          "Sedang SIT",
+          "SIT Cancel",
+          "Selesai"
+        ]);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  // 🔹 Handle input change
   const onInputChange = (e) => {
     const { name, value } = e.target;
     let updated = { ...user, [name]: value };
@@ -96,6 +143,7 @@ export default function AddUser() {
     setUser(updated);
   };
 
+  // 🔹 Submit form
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -137,88 +185,152 @@ export default function AddUser() {
         </div>
         <div className="card-body p-4">
           <form onSubmit={onSubmit} className="row g-4">
-
             <div className="col-md-6">
               <label className="form-label fw-semibold">Project Name</label>
-              <input type="text" className="form-control shadow-sm" name="projectName"
-                     value={user.projectName} onChange={onInputChange} placeholder="Nama Project"/>
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="projectName"
+                value={user.projectName}
+                onChange={onInputChange}
+                placeholder="Nama Project"
+              />
             </div>
 
             <div className="col-md-6">
               <label className="form-label fw-semibold">PIC Name</label>
-              <input type="text" className="form-control shadow-sm" name="picName"
-                     value={user.picName} onChange={onInputChange} placeholder="Nama PIC"/>
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="picName"
+                value={user.picName}
+                onChange={onInputChange}
+                placeholder="Masukkan atau pilih nama PIC"
+                list="picNamesList"
+                disabled={loadingOptions}
+              />
+              <datalist id="picNamesList">
+                {loadingOptions ? (
+                  <option value="Memuat PIC..." />
+                ) : (
+                  picNames.map((name, index) => (
+                    <option key={index} value={name} />
+                  ))
+                )}
+              </datalist>
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Status</label>
-              <select className="form-select shadow-sm" name="status"
-                      value={user.status} onChange={onInputChange}>
+              <select
+                className="form-select shadow-sm"
+                name="status"
+                value={user.status}
+                onChange={onInputChange}
+                disabled={loadingOptions}
+              >
                 <option value="">-- Pilih Status --</option>
-                <option value="Belum dikerjakan">Belum dikerjakan</option>
-                <option value="Sedang dikerjakan">Sedang dikerjakan</option>
-                <option value="Hold">Hold</option>
-                <option value="Ready SIT">Ready SIT</option>
-                <option value="Ready Testing">Ready Testing</option>
-                <option value="Ready UAT">Ready UAT</option>
-                <option value="Sedang SIT">Sedang SIT</option>
-                <option value="SIT Cancel">SIT Cancel</option>
-                <option value="Selesai">Selesai</option>
+                {loadingOptions ? (
+                  <option value="">Memuat status...</option>
+                ) : (
+                  statuses.map((status, index) => (
+                    <option key={index} value={status}>
+                      {status}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Receive Date</label>
-              <input type="date" className="form-control shadow-sm" name="receiveDate"
-                     value={user.receiveDate} onChange={onInputChange}/>
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="receiveDate"
+                value={user.receiveDate}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Start Date</label>
-              <input type="date" className="form-control shadow-sm" name="startDate"
-                     value={user.startDate} onChange={onInputChange}/>
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="startDate"
+                value={user.startDate}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">End Date</label>
-              <input type="date" className="form-control shadow-sm" name="endDate"
-                     value={user.endDate} onChange={onInputChange}/>
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="endDate"
+                value={user.endDate}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Dev Duration (hari)</label>
-              <input type="number" className="form-control shadow-sm" name="devDuration"
-                     value={user.devDuration} onChange={onInputChange}/>
+              <input
+                type="number"
+                className="form-control shadow-sm"
+                name="devDuration"
+                value={user.devDuration}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Project Owner</label>
-              <input type="text" className="form-control shadow-sm" name="projectOwner"
-                     value={user.projectOwner} onChange={onInputChange}/>
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="projectOwner"
+                value={user.projectOwner}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-md-4">
               <label className="form-label fw-semibold">Target</label>
-              <input type="date" className="form-control shadow-sm" name="target"
-                     value={user.target} onChange={onInputChange}/>
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="target"
+                value={user.target}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="col-12">
               <label className="form-label fw-semibold">Keterangan</label>
-              <textarea className="form-control shadow-sm" name="keterangan" rows="3"
-                        value={user.keterangan} onChange={onInputChange}/>
+              <textarea
+                className="form-control shadow-sm"
+                name="keterangan"
+                rows="3"
+                value={user.keterangan}
+                onChange={onInputChange}
+              />
             </div>
 
             <div className="d-flex justify-content-center mt-3">
               <button type="submit" className="btn btn-outline-primary px-4 me-2 shadow-sm">
                 Save
               </button>
-              <button type="button" className="btn btn-outline-secondary px-4 shadow-sm"
-                      onClick={() => navigate("/")}>
+              <button
+                type="button"
+                className="btn btn-outline-secondary px-4 shadow-sm"
+                onClick={() => navigate("/")}
+              >
                 Cancel
               </button>
             </div>
-
           </form>
         </div>
       </div>

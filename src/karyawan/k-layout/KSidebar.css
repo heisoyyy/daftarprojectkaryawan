@@ -3,7 +3,7 @@
   height: calc(100vh - 50px);
   background: linear-gradient(180deg, #212529, #343a40);
   color: white;
-  position: fixed;
+  position:absolute;
   top: 50px;
   left: 0;
   width: 240px;
@@ -21,16 +21,23 @@
 
 /* Sidebar header */
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  justify-content: space-around;
+  text-align: center;
+  padding: 20px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.sidebar-header .logo {
-  font-size: 22px;
+.sidebar-header h5 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  color: #ffc107;
+}
+
+.sidebar-header span {
+  font-size: 13px;
+  color: #adb5bd;
+  display: block;
 }
 
 /* Sidebar links */

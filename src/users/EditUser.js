@@ -66,7 +66,11 @@ export default function EditUser() {
     keterangan: "",
   });
 
-  // 🔹 Load user
+  const [picNames, setPicNames] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  // 🔹 Load user and options
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -83,7 +87,47 @@ export default function EditUser() {
         console.error("Error loading user:", error);
       }
     };
+
+    const fetchOptions = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/users");
+        const projects = response.data || [];
+        
+        // Extract unique picNames and statuses
+        const uniquePicNames = [...new Set(projects
+          .map(project => project.picName)
+          .filter(name => name && name.trim() !== ""))]
+          .sort();
+        
+        const uniqueStatuses = [...new Set(projects
+          .map(project => project.status)
+          .filter(status => status && status.trim() !== ""))]
+          .sort();
+        
+        setPicNames(uniquePicNames);
+        setStatuses(uniqueStatuses);
+      } catch (error) {
+        console.error("Error fetching options:", error);
+        // Fallback to default values
+        setPicNames([]);
+        setStatuses([
+          "Belum dikerjakan",
+          "Sedang dikerjakan",
+          "Hold",
+          "Ready SIT",
+          "Ready Testing",
+          "Ready UAT",
+          "Sedang SIT",
+          "SIT Cancel",
+          "Selesai"
+        ]);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
     loadUser();
+    fetchOptions();
   }, [id]);
 
   // 🔹 Handle input change
@@ -135,104 +179,235 @@ export default function EditUser() {
         </div>
         <div className="card-body p-4">
           <form onSubmit={onSubmit} className="row g-4">
-
             {/* --- Input Fields --- */}
             <div className="col-md-6">
               <label className="form-label fw-semibold">Project Name</label>
-              <input type="text" className="form-control shadow-sm" name="projectName" value={user.projectName} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="projectName"
+                value={user.projectName}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">PIC Name</label>
-              <input type="text" className="form-control shadow-sm" name="picName" value={user.picName} onChange={onInputChange} />
+              <select
+                className="form-select shadow-sm"
+                name="picName"
+                value={user.picName || ""}
+                onChange={onInputChange}
+                disabled={loadingOptions}
+              >
+                <option value="">-- Pilih PIC --</option>
+                {loadingOptions ? (
+                  <option value="">Memuat PIC...</option>
+                ) : (
+                  picNames.map((name, index) => (
+                    <option key={index} value={name}>
+                      {name}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">Status</label>
-              <select className="form-select shadow-sm" name="status" value={user.status} onChange={onInputChange}>
+              <select
+                className="form-select shadow-sm"
+                name="status"
+                value={user.status || ""}
+                onChange={onInputChange}
+                disabled={loadingOptions}
+              >
                 <option value="">-- Pilih Status --</option>
-                <option value="Belum dikerjakan">Belum dikerjakan</option>
-                <option value="Sedang dikerjakan">Sedang dikerjakan</option>
-                <option value="Hold">Hold</option>
-                <option value="Ready SIT">Ready SIT</option>
-                <option value="Ready Testing">Ready Testing</option>
-                <option value="Ready UAT">Ready UAT</option>
-                <option value="Sedang SIT">Sedang SIT</option>
-                <option value="SIT Cancel">SIT Cancel</option>
-                <option value="Selesai">Selesai</option>
+                {loadingOptions ? (
+                  <option value="">Memuat status...</option>
+                ) : (
+                  statuses.map((status, index) => (
+                    <option key={index} value={status}>
+                      {status}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">Receive Date</label>
-              <input type="date" className="form-control shadow-sm" name="receiveDate" value={user.receiveDate} onChange={onInputChange} />
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="receiveDate"
+                value={user.receiveDate}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">Start Date</label>
-              <input type="date" className="form-control shadow-sm" name="startDate" value={user.startDate} onChange={onInputChange} />
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="startDate"
+                value={user.startDate}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">End Date</label>
-              <input type="date" className="form-control shadow-sm" name="endDate" value={user.endDate} onChange={onInputChange} />
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="endDate"
+                value={user.endDate}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">Dev Duration (hari)</label>
-              <input type="number" className="form-control shadow-sm" name="devDuration" value={user.devDuration} onChange={onInputChange} />
+              <input
+                type="number"
+                className="form-control shadow-sm"
+                name="devDuration"
+                value={user.devDuration}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Tanggal SIT</label>
-              <input type="text" className="form-control shadow-sm" name="tglSit" value={user.tglSit} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="tglSit"
+                value={user.tglSit}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Tanggal UAT</label>
-              <input type="text" className="form-control shadow-sm" name="tglUat" value={user.tglUat} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="tglUat"
+                value={user.tglUat}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">STS FSD</label>
-              <input type="text" className="form-control shadow-sm" name="stsFsd" value={user.stsFsd} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="stsFsd"
+                value={user.stsFsd}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Project Owner</label>
-              <input type="text" className="form-control shadow-sm" name="projectOwner" value={user.projectOwner} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="projectOwner"
+                value={user.projectOwner}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Status Dokumen BRD/Change</label>
-              <input type="text" className="form-control shadow-sm" name="statusDokumenBrdOrChangeRequest" value={user.statusDokumenBrdOrChangeRequest} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="statusDokumenBrdOrChangeRequest"
+                value={user.statusDokumenBrdOrChangeRequest}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Application Name</label>
-              <input type="text" className="form-control shadow-sm" name="applicationName" value={user.applicationName} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="applicationName"
+                value={user.applicationName}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Category 1</label>
-              <input type="text" className="form-control shadow-sm" name="category" value={user.category} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="category"
+                value={user.category}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Category 2</label>
-              <input type="text" className="form-control shadow-sm" name="category2" value={user.category2} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="category2"
+                value={user.category2}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Category 3</label>
-              <input type="text" className="form-control shadow-sm" name="category3" value={user.category3} onChange={onInputChange} />
+              <input
+                type="text"
+                className="form-control shadow-sm"
+                name="category3"
+                value={user.category3}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Target</label>
-              <input type="date" className="form-control shadow-sm" name="target" value={user.target} onChange={onInputChange} />
+              <input
+                type="date"
+                className="form-control shadow-sm"
+                name="target"
+                value={user.target}
+                onChange={onInputChange}
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-semibold">Progress (%)</label>
-              <input type="number" className="form-control shadow-sm" name="progress" value={user.progress} onChange={onInputChange} />
+              <input
+                type="number"
+                className="form-control shadow-sm"
+                name="progress"
+                value={user.progress}
+                onChange={onInputChange}
+              />
             </div>
 
             {/* Keterangan */}
             <div className="col-12">
               <label className="form-label fw-semibold">Keterangan</label>
-              <textarea className="form-control shadow-sm" name="keterangan" value={user.keterangan} onChange={onInputChange} rows="3" />
+              <textarea
+                className="form-control shadow-sm"
+                name="keterangan"
+                value={user.keterangan}
+                onChange={onInputChange}
+                rows="3"
+              />
             </div>
 
             {/* Buttons */}
             <div className="d-flex justify-content-center mt-3">
-              <button type="submit" className="btn btn-outline-primary px-4 me-2 shadow-sm">Update</button>
-              <button type="button" className="btn btn-outline-secondary px-4 shadow-sm" onClick={() => navigate("/")}>Cancel</button>
+              <button type="submit" className="btn btn-outline-primary px-4 me-2 shadow-sm">
+                Update
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary px-4 shadow-sm"
+                onClick={() => navigate("/")}
+              >
+                Cancel
+              </button>
             </div>
-
           </form>
         </div>
       </div>

@@ -419,7 +419,7 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div style={{ padding: "20px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <div style={{ padding: "20px", backgroundColor: "#f5f5f5"}}>
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         <h3 style={{ marginBottom: "24px", color: "#333", textAlign: "center" }}>
           Dashboard Development

@@ -36,10 +36,10 @@ export default function NavbarI({ toggleSidebar }) {
   const checkInvalidDates = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+      // if (!token) {
+      //   navigate("/login");
+      //   return;
+      // }
 
       const result = await axios.get("http://localhost:8080/users", {
         headers: {

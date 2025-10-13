@@ -12,7 +12,7 @@ export default function NavbarI({ toggleSidebar }) {
     checkInvalidDates();
     checkNewProjects();
 
-    // interval setiap 30 detik
+    // Interval setiap 30 detik
     const interval = setInterval(checkNewProjects, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -86,7 +86,7 @@ export default function NavbarI({ toggleSidebar }) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const weekAgo = new Date(today);
-      weekAgo.setDate(today.getDate() - 7); // seminggu ke belakang
+      weekAgo.setDate(today.getDate() - 7); // Seminggu ke belakang
 
       // Ambil daftar ID yang sudah dibaca dari localStorage
       const readData = JSON.parse(localStorage.getItem("readProjects") || "{}");
@@ -95,8 +95,7 @@ export default function NavbarI({ toggleSidebar }) {
         .filter((user) => {
           const createdAt = parseDateSortable(user.createdAt || user.startDate);
           if (!createdAt) return false;
-
-          // proyek dalam seminggu terakhir
+          // Proyek dalam seminggu terakhir
           return createdAt >= weekAgo && createdAt <= today;
         })
         .map((user) => ({
@@ -106,8 +105,14 @@ export default function NavbarI({ toggleSidebar }) {
           startDate: user.startDate,
           endDate: user.endDate,
           createdAt: user.createdAt || user.startDate,
-          isRead: !!readData[user.id], // cek status baca
-        }));
+          isRead: !!readData[user.id], // Cek status baca
+        }))
+        // Sort by createdAt in descending order (newest first)
+        .sort((a, b) => {
+          const dateA = parseDateSortable(a.createdAt);
+          const dateB = parseDateSortable(b.createdAt);
+          return dateB - dateA; // Newest first
+        });
 
       // Hapus data lama (dibaca lebih dari sehari)
       for (const id in readData) {
@@ -233,6 +238,9 @@ export default function NavbarI({ toggleSidebar }) {
                   </p>
                   <p className="mb-1" style={{ fontSize: "14px" }}>
                     Selesai: {formatDate(project.endDate)}
+                  </p>
+                  <p className="mb-1" style={{ fontSize: "14px" }}>
+                    Dibuat: {formatDate(project.createdAt)}
                   </p>
                   <small className="text-muted">
                     {project.isRead ? "Dibaca" : "Belum Dibaca"}

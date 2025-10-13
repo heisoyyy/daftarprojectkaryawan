@@ -88,13 +88,13 @@
   padding: 12px;
   font-weight: 600;
   border-radius: 8px;
-  border: 2px solid #00ff08;
+  border: 2px solid #00e1ff;
   color: #6c757d;
   transition: all 0.3s ease;
 }
 
 .login-box .btn-outline-secondary:hover {
-  background: #00ff08;
+  background: #00e1ff;
   color: white;
   transform: translateY(-2px);
 }
