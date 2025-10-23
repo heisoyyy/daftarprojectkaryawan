@@ -380,81 +380,89 @@ export default function AvailableProgrammer() {
             </tbody>
           </table>
         </Tab>
-
         {/* All Available */}
         <Tab eventKey="all" title="All Available">
           <div className="d-flex justify-content-end mb-2 gap-2">
-            <Button variant="success" size="sm" onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.xlsx")}>
+            <Button
+              variant="success"
+              size="sm"
+              onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.xlsx")}
+            >
               <FaFileExcel /> Excel
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.csv")}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportToExcel(allAvailableSlots, "AllAvailable.csv")}
+            >
               <FaFileCsv /> CSV
             </Button>
           </div>
 
-          <div style={{ maxHeight: 420, overflowY: "auto" }}>
-            <table className="table table-bordered table-hover text-center align-middle table-striped shadow-sm">
-              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                <tr>
-                  <th>No</th>
-                  <th>PIC Name</th>
-                  <th>Available Start</th>
-                  <th>Available End</th>
-                  <th>Workdays</th>
-                </tr>
-              </thead>
-              <tbody className="table-light">
-              {(() => {
-                const grouped = currentDetailedRows.reduce((acc, item) => {
-                  acc[item.pic] = acc[item.pic] || [];
-                  acc[item.pic].push(item);
-                  return acc;
-                }, {});
+          <table className="table table-bordered table-hover text-center align-middle table-striped shadow-sm">
+            <thead className="table-dark">
+              <tr>
+                <th>No</th>
+                <th>PIC Name</th>
+                <th>Available Start</th>
+                <th>Available End</th>
+                <th>Workdays</th>
+              </tr>
+            </thead>
+            <tbody className="table-light">
+              {allAvailableSlots.length > 0 ? (
+                (() => {
+                  const grouped = allAvailableSlots.reduce((acc, item) => {
+                    acc[item.pic] = acc[item.pic] || [];
+                    acc[item.pic].push(item);
+                    return acc;
+                  }, {});
 
-                const rows = [];
-                let rowIndex = indexOfFirstRow;
-                Object.entries(grouped).forEach(([pic, items]) => {
-                  items.forEach((r, idx) => {
-                    rows.push(
-                      <tr key={`${pic}-${idx}`}>
-                        <td>{rowIndex + 1}</td>
-                        {idx === 0 && (
-                          <td rowSpan={items.length}>
-                            <OverlayTrigger trigger={["hover", "focus"]} placement="top" overlay={getPopoverForPic(pic)}>
-                              <span style={{ cursor: "pointer", color: "#000" }}>{pic}</span>
-                            </OverlayTrigger>
-                          </td>
-                        )}
-                        <td>{formatDate(r.start)}</td>
-                        <td>{formatDate(r.end)}</td>
-                        <td>{r.workdays}</td>
-                      </tr>
-                    );
-                    rowIndex++;
+                  let rowIndex = 0;
+                  const rows = [];
+
+                  Object.entries(grouped).forEach(([pic, items]) => {
+                    items.forEach((r, idx) => {
+                      rows.push(
+                        <tr key={`${pic}-${idx}`}>
+                          <td>{rowIndex + 1}</td>
+                          {idx === 0 && (
+                            <td rowSpan={items.length}>
+                              <OverlayTrigger
+                                trigger={["hover", "focus"]}
+                                placement="top"
+                                overlay={getPopoverForPic(pic)}
+                              >
+                                <span style={{ cursor: "pointer", color: "#000" }}>{pic}</span>
+                              </OverlayTrigger>
+                            </td>
+                          )}
+                          <td>{formatDate(r.start)}</td>
+                          <td>{formatDate(r.end)}</td>
+                          <td>{r.workdays}</td>
+                        </tr>
+                      );
+                      rowIndex++;
+                    });
                   });
-                });
 
-                return (
-                  <>
-                    {rows}
-                    <tr className="table-dark fw-bold">
-                      <td colSpan={4}>TOTAL</td>
-                      <td>{totalAll}</td>
-                    </tr>
-                  </>
-                );
-              })()}
+                  return (
+                    <>
+                      {rows}
+                      <tr className="table-dark fw-bold">
+                        <td colSpan={4}>TOTAL</td>
+                        <td>{totalAll}</td>
+                      </tr>
+                    </>
+                  );
+                })()
+              ) : (
+                <tr>
+                  <td colSpan={5}>No data available</td>
+                </tr>
+              )}
             </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <Button size="sm" variant="outline-dark" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>Previous</Button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <Button size="sm" variant="outline-dark" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>Next</Button>
-            </div>
-          )}
+          </table>
         </Tab>
       </Tabs>
     </div>

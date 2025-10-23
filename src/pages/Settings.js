@@ -1,4 +1,3 @@
-// src/pages/Settings.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import './Settings.css';
@@ -6,6 +5,7 @@ import './Settings.css';
 export default function Settings() {
   const username = localStorage.getItem('username');
   const fullName = localStorage.getItem('fullName');
+  const role = localStorage.getItem('userRole')
 
   const [formData, setFormData] = useState({
     oldPassword: '',
@@ -42,23 +42,15 @@ export default function Settings() {
     setLoading(true);
 
     try {
-      const response = await axios.put(
-        'http://localhost:8080/auth/change-password',
-        {
-          username: username,
-          oldPassword: formData.oldPassword,
-          newPassword: formData.newPassword
-        }
-      );
+      const response = await axios.put('http://localhost:8080/auth/change-password', {
+        username: username,
+        oldPassword: formData.oldPassword,
+        newPassword: formData.newPassword
+      });
 
       if (response.data.success) {
         setMessage({ type: 'success', text: 'Password berhasil diubah!' });
-        // Reset form
-        setFormData({
-          oldPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        });
+        setFormData({ oldPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch (err) {
       if (err.response) {
@@ -73,35 +65,37 @@ export default function Settings() {
 
   return (
     <div className="settings-container">
-      <div className="settings-header">
-        <h3>
-          <i className="bi bi-gear me-2"></i>
-          Settings
+      <div className="settings-header mb-4">
+        <h3 className="fw-bold">
+          <i className="bi bi-gear-fill me-2"></i> Pengaturan Akun
         </h3>
-        <p className="text-muted">Kelola akun dan keamanan Anda</p>
+        <p className="text-muted">Kelola profil dan keamanan akun Anda</p>
       </div>
 
-      <div className="row">
+      <div className="row g-4">
         {/* Profile Card */}
-        <div className="col-md-4 mb-4">
-          <div className="card shadow-sm">
+        <div className="col-lg-4 col-md-5">
+          <div className="card profile-card shadow-lg border-0 rounded-4">
             <div className="card-body text-center">
-              <div className="profile-icon mb-3">
-                <i className="bi bi-person-circle"></i>
+              <div className="profile-avatar mb-3">
+                <i className="bi bi-person-circle display-3 text-secondary"></i>
               </div>
-              <h5>{fullName}</h5>
-              <p className="text-muted mb-1">@{username}</p>
-              <span className="badge bg-primary">Admin</span>
+              <h5 className="fw-bold">{fullName}</h5>
+              <p className="text-muted">@{username}</p>
+              <hr />
+              <p className="small text-muted">
+                <i className="bi bi-shield-check me-2"></i><strong>{role}</strong>
+              </p>
             </div>
           </div>
         </div>
 
         {/* Change Password Form */}
-        <div className="col-md-8">
-          <div className="card shadow-sm">
-            <div className="card-header bg-white">
-              <h5 className="mb-0">
-                <i className="bi bi-shield-lock me-2"></i>
+        <div className="col-lg-8 col-md-7">
+          <div className="card shadow-lg border-0 rounded-4">
+            <div className="card-header bg-light border-0 py-3">
+              <h5 className="mb-0 fw-semibold text-dark">
+                <i className="bi bi-shield-lock-fill me-2 text-primary"></i>
                 Ubah Password
               </h5>
             </div>
@@ -114,12 +108,12 @@ export default function Settings() {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="oldPassword" className="form-label">
+                  <label htmlFor="oldPassword" className="form-label fw-semibold">
                     Password Lama
                   </label>
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control form-control-lg rounded-3"
                     id="oldPassword"
                     name="oldPassword"
                     value={formData.oldPassword}
@@ -130,12 +124,12 @@ export default function Settings() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="newPassword" className="form-label">
+                  <label htmlFor="newPassword" className="form-label fw-semibold">
                     Password Baru
                   </label>
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control form-control-lg rounded-3"
                     id="newPassword"
                     name="newPassword"
                     value={formData.newPassword}
@@ -147,24 +141,24 @@ export default function Settings() {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="confirmPassword" className="form-label">
+                  <label htmlFor="confirmPassword" className="form-label fw-semibold">
                     Konfirmasi Password Baru
                   </label>
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control form-control-lg rounded-3"
                     id="confirmPassword"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Konfirmasi password baru"
+                    placeholder="Ulangi password baru"
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="btn btn-edit"
+                  className="btn btn-primary btn-lg rounded-3 px-4"
                   disabled={loading}
                 >
                   {loading ? (

@@ -5,6 +5,9 @@ export default function Sidebar({ isOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Ambil role user dari localStorage
+  const userRole = localStorage.getItem('userRole');
+
   const handleLogout = () => {
     if (window.confirm('Apakah Anda yakin ingin logout?')) {
       // Hapus semua data login
@@ -48,9 +51,7 @@ export default function Sidebar({ isOpen }) {
         <li className="nav-item">
           <Link
             to="/available-programmer"
-            className={`sidebar-link ${
-              location.pathname === "/available-programmer" ? "active" : ""
-            }`}
+            className={`sidebar-link ${location.pathname === "/available-programmer" ? "active" : ""}`}
           >
             <i className="bi bi-people me-2"></i>
             Programmer
@@ -72,6 +73,32 @@ export default function Sidebar({ isOpen }) {
 
       {/* Menu Settings & Logout */}
       <ul className="nav flex-column sidebar-menu-bottom">
+
+        {/* Hanya PINBAG yang melihat menu AddKaryawan */}
+        {userRole === "PINBAG" && (
+          <li className="nav-item">
+            <Link
+              to="/history"
+              className={`sidebar-link ${location.pathname === "/history" ? "active" : ""}`}
+            >
+              <i className="bi bi-person-plus me-2"></i>
+              Riwayat
+            </Link>
+          </li>
+        )}
+        
+        {userRole === "PINBAG" && (
+          <li className="nav-item">
+            <Link
+              to="/addkaryawan"
+              className={`sidebar-link ${location.pathname === "/addkaryawan" ? "active" : ""}`}
+            >
+              <i className="bi bi-person-plus me-2"></i>
+              Tambah User
+            </Link>
+          </li>
+        )}
+
         <li className="nav-item">
           <Link
             to="/settings"

@@ -116,7 +116,7 @@ const ViewKaryawanModal = ({ user, onClose }) => {
 
   return (
     <div className="modal-content p-4" style={{ backgroundColor: "#f8f9fa", borderRadius: "8px", maxWidth: "800px", margin: "auto" }}>
-      <h2 className="text-center mb-4">📌 Detail Project Karyawan</h2>
+      <h2 className="text-center mb-4">Detail Project Karyawan</h2>
       <div className="card mb-4 shadow-sm">
         <div className="card-body">
           <h4 className="card-title mb-3">{user.projectName}</h4>
@@ -156,7 +156,7 @@ const ViewKaryawanModal = ({ user, onClose }) => {
         </div>
       </div>
       <div className="card mb-4 shadow-sm">
-        <div className="card-header">📊 Timeline Bulanan</div>
+        <div className="card-header">Timeline Bulanan</div>
         <div className="card-body">
           <table className="table table-bordered text-center">
             <thead className="table-light">
@@ -189,7 +189,7 @@ const ViewKaryawanModal = ({ user, onClose }) => {
         </div>
       </div>
       <div className="card mb-3 shadow-sm">
-        <div className="card-header">📝 Keterangan</div>
+        <div className="card-header">Keterangan</div>
         <div className="card-body">
           <p>{user.keterangan || "Tidak ada keterangan"}</p>
         </div>
@@ -746,25 +746,36 @@ export default function EmployeeDashboard() {
                     <h5 style={{ marginBottom: "12px", fontSize: "16px", color: "#555" }}>
                       Persentase Kategori
                     </h5>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={320}>
                       <PieChart>
-                        <Pie 
-                          data={chartData.pieData} 
-                          dataKey="value" 
-                          nameKey="name" 
-                          cx="50%" 
-                          cy="50%" 
-                          outerRadius={80} 
-                          label
+                        <Pie
+                          data={chartData.pieData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(1)}%`
+                          }
+                          labelLine={false}
                         >
                           {chartData.pieData.map((entry, idx) => (
                             <Cell key={`cell-${idx}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip />
-                        <Legend />
+
+                        <Tooltip
+                          formatter={(value, name) => {
+                            const total = chartData.pieData.reduce((sum, d) => sum + d.value, 0);
+                            const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                            return [`${value} (${percent}%)`, name];
+                          }}
+                        />
+                        <Legend verticalAlign="bottom" height={36} />
                       </PieChart>
                     </ResponsiveContainer>
+
                   </div>
                 </div>
                 <div style={{ marginTop: "20px" }}>

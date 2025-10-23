@@ -144,8 +144,13 @@ export default function AddUser() {
   };
 
   // 🔹 Submit form
+  // Di AddUser.jsx, update fungsi onSubmit
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    const username = localStorage.getItem('username') || 'Unknown';
+    const role = localStorage.getItem('userRole') || 'Unknown';
+    
     try {
       const payload = {
         ...user,
@@ -170,10 +175,18 @@ export default function AddUser() {
       };
 
       await axios.post("http://localhost:8080/user", payload);
+      
+      alert(
+        `✅ Project berhasil ditambahkan!\n\n` +
+        `📝 Ditambahkan oleh: ${username}\n` +
+        `👤 Role: ${role}\n` +
+        `📋 Data telah tercatat di History`
+      );
+      
       navigate("/");
     } catch (error) {
       console.error(error);
-      alert("Gagal menambahkan user, periksa input data!");
+      alert("❌ Gagal menambahkan project. Silakan coba lagi!");
     }
   };
 

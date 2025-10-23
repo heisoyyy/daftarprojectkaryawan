@@ -1,8 +1,21 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./KSidebar.css";
 
 export default function Sidebar({ isOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Fungsi logout / kembali ke login
+  const handleBackToLogin = () => {
+    // Hapus data localStorage agar sesi karyawan hilang
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("username");
+    localStorage.removeItem("fullName");
+
+    // Arahkan ke halaman login
+    navigate("/login");
+  };
 
   return (
     <aside className={`sidebar ${isOpen ? "open" : "closed"}`}>
@@ -23,12 +36,18 @@ export default function Sidebar({ isOpen }) {
             Dashboard
           </Link>
         </li>
-        {/* Tambahkan menu lain sesuai kebutuhan */}
       </ul>
 
       {/* Footer */}
-      <div className="sidebar-footer">
-        © {new Date().getFullYear()} TSI Dept.
+      <div className="sidebar-footer mt-auto text-center">
+        <button 
+          className="btn btn-outline-danger w-75 mb-2"
+          onClick={handleBackToLogin}
+        >
+          Kembali ke Login
+        </button>
+        <br/>
+        <small>© {new Date().getFullYear()} TSI Dept.</small>
       </div>
     </aside>
   );

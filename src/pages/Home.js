@@ -10,7 +10,7 @@ import "react-resizable/css/styles.css";
 import "./Home.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { Dropdown, ButtonGroup, Button } from 'react-bootstrap';
+import { Dropdown, ButtonGroup, Button, Modal } from 'react-bootstrap';
 
 const allColumns = [
   { key: "projectName", label: "Project Name" },
@@ -53,29 +53,101 @@ const monthNames = [
 
 export default function Home() {
   const [users, setUsers] = useState([]);
-  const [filters, setFilters] = useState({});
-  const [search, setSearch] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState({});
+  
+  // PERSISTENT FILTERS - Ambil dari localStorage
+  const [filters, setFilters] = useState(() => {
+    const saved = localStorage.getItem('dashboardFilters');
+    return saved ? JSON.parse(saved) : {};
+  });
+  
+  const [search, setSearch] = useState(() => {
+    return localStorage.getItem('dashboardSearch') || "";
+  });
+  
+  // PERSISTENT VISIBLE COLUMNS - Ambil dari localStorage
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('dashboardVisibleColumns');
+    if (saved) {
+      return JSON.parse(saved);
+    } else {
+      const initCols = {};
+      allColumns.forEach((col) => {
+        initCols[col.key] = true;
+      });
+      return initCols;
+    }
+  });
+  
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('dashboardColumnWidths');
+    if (saved) {
+      return JSON.parse(saved);
+    } else {
+      const initWidths = {};
+      allColumns.forEach((col) => {
+        if (col.key.startsWith("col")) {
+          initWidths[col.key] = 60;
+        } else {
+          initWidths[col.key] = 150;
+        }
+      });
+      return initWidths;
+    }
+  });
+  
   const [showColumnPanel, setShowColumnPanel] = useState(false);
-  const [columnWidths, setColumnWidths] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  
+  const [sortConfig, setSortConfig] = useState(() => {
+    const saved = localStorage.getItem('dashboardSort');
+    return saved ? JSON.parse(saved) : { key: null, direction: "asc" };
+  });
+  
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = localStorage.getItem('dashboardPage');
+    return saved ? parseInt(saved) : 1;
+  });
+  
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const saved = localStorage.getItem('dashboardItemsPerPage');
+    return saved ? parseInt(saved) : 50;
+  });
+
+  // MODAL STATE
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  // Simpan ke localStorage untuk visibleColumns dan columnWidths
+  useEffect(() => {
+    localStorage.setItem('dashboardVisibleColumns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardColumnWidths', JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  // SAVE TO LOCALSTORAGE WHEN FILTERS CHANGE
+  useEffect(() => {
+    localStorage.setItem('dashboardFilters', JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardSearch', search);
+  }, [search]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardSort', JSON.stringify(sortConfig));
+  }, [sortConfig]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardPage', currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardItemsPerPage', itemsPerPage.toString());
+  }, [itemsPerPage]);
 
   useEffect(() => {
     loadUser();
-    const initCols = {};
-    const initWidths = {};
-    allColumns.forEach((col) => {
-      initCols[col.key] = true;
-      if (col.key.startsWith("col")) {
-        initWidths[col.key] = 60;
-      } else {
-        initWidths[col.key] = 150;
-      }
-    });
-    setVisibleColumns(initCols);
-    setColumnWidths(initWidths);
   }, []);
 
   const loadUser = async () => {
@@ -87,16 +159,31 @@ export default function Home() {
     }
   };
 
+  // Di Home.jsx, update fungsi deleteUser
+  // Update fungsi deleteUser
   const deleteUser = async (id) => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
+    const username = localStorage.getItem('username') || 'Unknown';
+    const role = localStorage.getItem('userRole') || 'Unknown';
+    
+    if (window.confirm("⚠️ Apakah Anda yakin ingin menghapus project ini?\n\nAksi ini akan tercatat di History.")) {
       try {
         await axios.delete(`http://localhost:8080/user/${id}`);
+        
+        alert(
+          `✅ Project berhasil dihapus!\n\n` +
+          `📝 Dihapus oleh: ${username}\n` +
+          `👤 Role: ${role}\n` +
+          `📋 Penghapusan telah tercatat di History`
+        );
+        
         loadUser();
       } catch (error) {
         console.error("Error deleting user:", error);
+        alert("❌ Gagal menghapus project!");
       }
     }
   };
+
 
   const parseDateSortable = (dateStr) => {
     if (!dateStr) return null;
@@ -123,7 +210,7 @@ export default function Home() {
   };
 
   const getUniqueValues = (key) => {
-    const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+    const dateKeys = ["receiveDate", "startDate", "endDate", "target"];
     
     if (dateKeys.includes(key)) {
       const months = users
@@ -151,6 +238,12 @@ export default function Home() {
     setSearch("");
     setCurrentPage(1);
     setSortConfig({ key: null, direction: "asc" });
+    
+    // CLEAR LOCALSTORAGE
+    localStorage.removeItem('dashboardFilters');
+    localStorage.removeItem('dashboardSearch');
+    localStorage.removeItem('dashboardSort');
+    localStorage.removeItem('dashboardPage');
   };
 
   const filteredUsers = users.filter(user => {
@@ -163,7 +256,7 @@ export default function Home() {
     const matchFilters = Object.entries(filters).every(([key, vals]) => {
       if (!vals || vals.length === 0) return true;
       
-      const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+      const dateKeys = ["receiveDate", "startDate", "endDate",  "target"];
       
       if (dateKeys.includes(key)) {
         const userMonth = parseMonth(user[key]);
@@ -179,26 +272,48 @@ export default function Home() {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
-    const valA = a[sortConfig.key] ?? "";
-    const valB = b[sortConfig.key] ?? "";
+    const valA = a[sortConfig.key];
+    const valB = b[sortConfig.key];
 
-    const dateKeys = ["receiveDate","startDate","endDate","tglSit","tglUat"];
+    // Cek apakah kosong/null
+    const isEmptyA = valA === null || valA === undefined || valA === "";
+    const isEmptyB = valB === null || valB === undefined || valB === "";
+
+    // Kalau salah satu kosong → taruh di bawah
+    if (isEmptyA && !isEmptyB) return 1;
+    if (!isEmptyA && isEmptyB) return -1;
+
+    // Kalau dua-duanya kosong → posisinya tetap
+    if (isEmptyA && isEmptyB) return 0;
+
+    // Untuk kolom tanggal
+    const dateKeys = ["receiveDate", "startDate", "endDate", "target"];
     if (dateKeys.includes(sortConfig.key)) {
       const dateA = parseDateSortable(valA);
       const dateB = parseDateSortable(valB);
-      if (!dateA) return 1;
-      if (!dateB) return -1;
+
+      // Kalau salah satu tanggal invalid → taruh bawah
+      if (!dateA && dateB) return 1;
+      if (dateA && !dateB) return -1;
+      if (!dateA && !dateB) return 0;
+
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
 
+    // Untuk angka
     if (typeof valA === "number" && typeof valB === "number") {
       return sortConfig.direction === "asc" ? valA - valB : valB - valA;
     }
 
+    // Untuk teks → ubah jadi string aman
+    const strA = valA != null ? valA.toString() : "";
+    const strB = valB != null ? valB.toString() : "";
+
     return sortConfig.direction === "asc"
-      ? valA.toString().localeCompare(valB.toString())
-      : valB.toString().localeCompare(valA.toString());
+      ? strA.localeCompare(strB)
+      : strB.localeCompare(strA);
   });
+
 
   const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -226,33 +341,51 @@ export default function Home() {
     saveAs(blob, "users.csv");
   };
 
+  // Update fungsi importFromCSV
   const importFromCSV = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    const username = localStorage.getItem('username') || 'Unknown';
+    const role = localStorage.getItem('userRole') || 'Unknown';
+    
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      await axios.post("http://localhost:8080/users/import/csv", formData, {
+      const response = await axios.post("http://localhost:8080/users/import/csv", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("CSV berhasil di-import!");
+      
+      alert(
+        `✅ CSV berhasil di-import!\n\n` +
+        `📊 Total: ${response.data.length} project\n` +
+        `📝 Diimport oleh: ${username}\n` +
+        `👤 Role: ${role}\n` +
+        `📋 Semua data telah tercatat di History`
+      );
+      
       loadUser();
     } catch (error) {
       console.error("Error importing CSV:", error);
-      alert("Gagal import CSV");
+      alert("❌ Gagal import CSV!");
     } finally {
       e.target.value = "";
     }
   };
 
+  // Update fungsi importFromExcel
   const importFromExcel = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    const username = localStorage.getItem('username') || 'Unknown';
+    const role = localStorage.getItem('userRole') || 'Unknown';
+    
     const allowedExtensions = ["xlsx", "xls"];
     const ext = file.name.split(".").pop().toLowerCase();
     if (!allowedExtensions.includes(ext)) {
-      alert("Format file tidak valid! Hanya mendukung .xlsx atau .xls");
+      alert("⚠️ Format file tidak valid! Hanya mendukung .xlsx atau .xls");
       e.target.value = "";
       return;
     }
@@ -261,14 +394,22 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      await axios.post("http://localhost:8080/users/import/excel", formData, {
+      const response = await axios.post("http://localhost:8080/users/import/excel", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Excel berhasil di-import!");
+      
+      alert(
+        `✅ Excel berhasil di-import!\n\n` +
+        `📊 Total: ${response.data.length} project\n` +
+        `📝 Diimport oleh: ${username}\n` +
+        `👤 Role: ${role}\n` +
+        `📋 Semua data telah tercatat di History`
+      );
+      
       loadUser();
     } catch (error) {
       console.error("Error importing Excel:", error);
-      alert("Gagal import Excel");
+      alert("❌ Gagal import Excel!");
     } finally {
       e.target.value = "";
     }
@@ -315,6 +456,17 @@ export default function Home() {
     }
   };
 
+  // MODAL HANDLERS
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+  };
+
   return (
     <div className="card p-3 shadow py-4">
       <h3 className="mb-4 text-center">Dashboard Development</h3>
@@ -357,18 +509,41 @@ export default function Home() {
       </div>
 
       <div className="mb-3">
-        <button className="btn btn-outline-primary" onClick={() => setShowColumnPanel(!showColumnPanel)}>
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => setShowColumnPanel(!showColumnPanel)}
+        >
           Show/Hide Columns
         </button>
+
         {showColumnPanel && (
-          <div className="card card-column-panel p-2 mt-2">
+          <div
+            className="card card-column-panel p-2 mt-2"
+            style={{
+              maxHeight: "250px", // tinggi maksimal panel
+              overflowY: "auto",   // aktifkan scroll vertikal
+              border: "1px solid #dee2e6",
+            }}
+          >
             <div className="row">
-              {allColumns.map(col => (
-                <div key={col.key} className="col-6 col-md-3">
+              {allColumns.map((col) => (
+                <div key={col.key} className="col-6 col-md-3 mb-2">
                   <div className="form-check">
-                    <input type="checkbox" className="form-check-input" id={col.key} checked={visibleColumns[col.key]}
-                      onChange={e => setVisibleColumns(prev => ({ ...prev, [col.key]: e.target.checked }))} />
-                    <label className="form-check-label" htmlFor={col.key}>{col.label}</label>
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={col.key}
+                      checked={visibleColumns[col.key]}
+                      onChange={(e) =>
+                        setVisibleColumns((prev) => ({
+                          ...prev,
+                          [col.key]: e.target.checked,
+                        }))
+                      }
+                    />
+                    <label className="form-check-label" htmlFor={col.key}>
+                      {col.label}
+                    </label>
                   </div>
                 </div>
               ))}
@@ -376,6 +551,7 @@ export default function Home() {
           </div>
         )}
       </div>
+
 
       <div className="row mb-3">
         <div className="col-md-9">
@@ -415,7 +591,7 @@ export default function Home() {
               {allColumns.map(col => {
                 if (!visibleColumns[col.key]) return null;
                 
-                const dateKeys = ["receiveDate", "startDate", "endDate", "tglSit", "tglUat"];
+                const dateKeys = ["receiveDate", "startDate", "endDate",  "target"];
                 const isDateColumn = dateKeys.includes(col.key);
                 
                 return (
@@ -480,7 +656,7 @@ export default function Home() {
                   ))}
                   <td>
                     <div className="btn-group">
-                      <Link className="btn btn-success btn-sm" to={`/viewuser/${user.id}`}>View</Link>
+                      <button className="btn btn-success btn-sm" onClick={() => handleViewUser(user)}>View</button>
                       <Link className="btn btn-warning btn-sm" to={`/edituser/${user.id}`}>Edit</Link>
                       <button className="btn btn-danger btn-sm" onClick={() => deleteUser(user.id)}>Delete</button>
                     </div>
@@ -546,6 +722,108 @@ export default function Home() {
           </nav>
         </div>
       )}
+
+      {/* MODAL VIEW USER */}
+      <Modal show={showModal} onHide={handleCloseModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Project Detail</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedUser && (
+            <>
+              {/* Basic Info */}
+              <div className="card mb-4 shadow-sm">
+                <div className="card-body">
+                  <h4 className="card-title mb-3">{selectedUser.projectName}</h4>
+                  <p><strong>PIC:</strong> {selectedUser.picName}</p>
+                  <p><strong>Status:</strong>{" "}
+                    <span className={`badge ${
+                      selectedUser.status === "Selesai"
+                        ? "bg-success"
+                        : selectedUser.status === "Sedang Dikerjakan"
+                        ? "bg-warning text-dark"
+                        : "bg-secondary"
+                    }`}>
+                      {selectedUser.status}
+                    </span>
+                  </p>
+                  <p><strong>Owner:</strong> {selectedUser.projectOwner}</p>
+                  <p><strong>Application:</strong> {selectedUser.applicationName}</p>
+                  <p><strong>Progress:</strong> {selectedUser.progress}%</p>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="row mb-3">
+                <div className="col-md-6">
+                  <ul className="list-group">
+                    <li className="list-group-item"><strong>Receive Date:</strong> {selectedUser.receiveDate}</li>
+                    <li className="list-group-item"><strong>Start Date:</strong> {selectedUser.startDate}</li>
+                    <li className="list-group-item"><strong>End Date:</strong> {selectedUser.endDate}</li>
+                    <li className="list-group-item"><strong>Dev Duration:</strong> {selectedUser.devDuration} hari</li>
+                  </ul>
+                </div>
+                <div className="col-md-6">
+                  <ul className="list-group">
+                    <li className="list-group-item"><strong>Tanggal SIT:</strong> {selectedUser.tglSit}</li>
+                    <li className="list-group-item"><strong>Tanggal UAT:</strong> {selectedUser.tglUat}</li>
+                    <li className="list-group-item"><strong>STS FSD:</strong> {selectedUser.stsFsd}</li>
+                    <li className="list-group-item"><strong>Dokumen BRD/CR:</strong> {selectedUser.statusDokumenBrdOrChangeRequest}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Monthly Table */}
+              <div className="card mb-4 shadow-sm">
+                <div className="card-header">Monthly Data</div>
+                <div className="card-body">
+                  <table className="table table-bordered text-center">
+                    <thead className="table-light">
+                      <tr>
+                        {monthNames.map((m, i) => <th key={i} style={{fontSize: '12px'}}>{m}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {monthNames.map((_, i) => {
+                          const monthIndex = i + 1;
+                          const startMonth = parseMonth(selectedUser.startDate);
+                          const endMonth = parseMonth(selectedUser.endDate);
+                          const isHighlighted = monthIndex === startMonth || monthIndex === endMonth;
+                          return (
+                            <td key={i} style={{ padding: 0 }}>
+                              <div
+                                style={{
+                                  backgroundColor: isHighlighted ? "yellow" : "white",
+                                  width: "100%",
+                                  height: "25px",
+                                }}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Keterangan */}
+              <div className="card mb-3 shadow-sm">
+                <div className="card-header">Keterangan</div>
+                <div className="card-body">
+                  <p>{selectedUser.keterangan || "Tidak ada keterangan"}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
