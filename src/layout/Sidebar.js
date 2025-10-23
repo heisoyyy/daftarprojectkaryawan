@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "./Sidebar.css";
 
 export default function Sidebar({ isOpen }) {
@@ -6,25 +7,34 @@ export default function Sidebar({ isOpen }) {
   const navigate = useNavigate();
 
   // Ambil role user dari localStorage
-  const userRole = localStorage.getItem('userRole');
+  const userRole = localStorage.getItem("userRole");
+
+  // State buka/tutup dropdown
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Auto-open jika sedang di /history atau /addkaryawan
+  useEffect(() => {
+    if (location.pathname === "/history" || location.pathname === "/addkaryawan") {
+      setIsDropdownOpen(true);
+    } else {
+      setIsDropdownOpen(false);
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
-    if (window.confirm('Apakah Anda yakin ingin logout?')) {
-      // Hapus semua data login
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('username');
-      localStorage.removeItem('fullName');
-
-      // Redirect ke login
-      navigate('/login');
+    if (window.confirm("Apakah Anda yakin ingin logout?")) {
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
+      localStorage.removeItem("fullName");
+      navigate("/login");
     }
   };
 
   return (
     <div className={`sidebar ${isOpen ? "open" : "closed"}`}>
-      {/* Header */} 
-      <div className="sidebar-header"> 
+      {/* Header */}
+      <div className="sidebar-header">
         <h5>MoniSys</h5>
       </div>
 
@@ -39,6 +49,7 @@ export default function Sidebar({ isOpen }) {
             Task List
           </Link>
         </li>
+
         <li className="nav-item">
           <Link
             to="/rekaps"
@@ -48,6 +59,7 @@ export default function Sidebar({ isOpen }) {
             Rekap Project
           </Link>
         </li>
+
         <li className="nav-item">
           <Link
             to="/available-programmer"
@@ -57,6 +69,7 @@ export default function Sidebar({ isOpen }) {
             Programmer
           </Link>
         </li>
+
         <li className="nav-item">
           <Link
             to="/grafiks"
@@ -71,31 +84,39 @@ export default function Sidebar({ isOpen }) {
       {/* Divider */}
       <div className="divider"></div>
 
-      {/* Menu Settings & Logout */}
+      {/* Menu bawah */}
       <ul className="nav flex-column sidebar-menu-bottom">
+        {/* Dropdown hanya untuk PINBAG */}
+        {userRole === "PINBAG" && (
+          <li className={`nav-item dropdown ${isDropdownOpen ? "show" : ""}`}>
+            <button
+              className="nav-link dropdown-toggle sidebar-link"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <i className="bi bi-people me-2"></i>
+              Manajemen User
+            </button>
 
-        {/* Hanya PINBAG yang melihat menu AddKaryawan */}
-        {userRole === "PINBAG" && (
-          <li className="nav-item">
-            <Link
-              to="/history"
-              className={`sidebar-link ${location.pathname === "/history" ? "active" : ""}`}
-            >
-              <i className="bi bi-person-plus me-2"></i>
-              Riwayat
-            </Link>
-          </li>
-        )}
-        
-        {userRole === "PINBAG" && (
-          <li className="nav-item">
-            <Link
-              to="/addkaryawan"
-              className={`sidebar-link ${location.pathname === "/addkaryawan" ? "active" : ""}`}
-            >
-              <i className="bi bi-person-plus me-2"></i>
-              Tambah User
-            </Link>
+            <ul className={`dropdown-menu ${isDropdownOpen ? "show" : ""}`}>
+              <li>
+                <Link
+                  to="/history"
+                  className={`dropdown-item ${location.pathname === "/history" ? "active" : ""}`}
+                >
+                  <i className="bi bi-clock-history me-2"></i>
+                  Riwayat
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/addkaryawan"
+                  className={`dropdown-item ${location.pathname === "/addkaryawan" ? "active" : ""}`}
+                >
+                  <i className="bi bi-person-plus me-2"></i>
+                  Tambah User
+                </Link>
+              </li>
+            </ul>
           </li>
         )}
 
@@ -108,11 +129,9 @@ export default function Sidebar({ isOpen }) {
             Settings
           </Link>
         </li>
+
         <li className="nav-item">
-          <button 
-            className="sidebar-link logout-btn" 
-            onClick={handleLogout}
-          >
+          <button className="sidebar-link logout-btn" onClick={handleLogout}>
             <i className="bi bi-box-arrow-right me-2"></i>
             Logout
           </button>

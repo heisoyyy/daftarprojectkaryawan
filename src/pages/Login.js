@@ -51,8 +51,11 @@
     };
 
     const handleKaryawanClick = () => {
-      navigate('/karyawan');
-    };
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('userRole', 'GUEST');
+    navigate('/karyawan');
+  };
+
 
     return (
       <div className="login-container">
