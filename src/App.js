@@ -100,6 +100,7 @@ function AppContent() {
       >
         <Routes>
           <Route path="/karyawan" element={<DashboardKaryawan />} />
+          <Route path="/talons" element={<Talon />} />
         </Routes>
       </KaryawanLayout>
     );
@@ -118,7 +119,6 @@ function AppContent() {
             <Route path="/available-programmer" element={<AvailableProgrammer />} />
             <Route path="/grafiks" element={<Grafik />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/talons" element={<Talon />} />
             <Route path="/addkaryawan" element={<AddKaryawan />} />
             <Route path="/history" element={<History />} />
             <Route path="/adduser" element={<AddUser />} />

@@ -93,7 +93,6 @@ export default function Sidebar({ isOpen }) {
               className="nav-link dropdown-toggle sidebar-link"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-              <i className="bi bi-people me-2"></i>
               Manajemen User
             </button>
 
