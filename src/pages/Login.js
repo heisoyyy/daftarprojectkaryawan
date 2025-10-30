@@ -27,7 +27,7 @@
       setError('');
 
       try {
-        const response = await axios.post('http://localhost:8080/auth/login', formData);
+        const response = await axios.post('http://192.168.1.22:8080/auth/login', formData);
         
         if (response.data.success) {
           // Simpan data user ke localStorage

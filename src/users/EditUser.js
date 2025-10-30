@@ -103,7 +103,7 @@ export default function EditUser() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:8080/user/${id}`);
+        const { data } = await axios.get(`http://192.168.1.22:8080/user/${id}`);
         setSitItems(parseFromDB(data.tglSit));
         setUatItems(parseFromDB(data.tglUat));
         setUser({
@@ -121,7 +121,7 @@ export default function EditUser() {
 
     const loadOptions = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/users");
+        const res = await axios.get("http://192.168.1.22:8080/users");
         const users = res.data || [];
         setPicNames([...new Set(users.map((u) => u.picName).filter(Boolean))].sort());
         setStatuses([...new Set(users.map((u) => u.status).filter(Boolean))].sort());
@@ -230,7 +230,7 @@ export default function EditUser() {
         statusDokumenBrdOrChangeRequest: user.statusDokumenBrdOrChangeRequest || "-"
       };
 
-      await axios.put(`http://localhost:8080/user/${id}`, payload);
+      await axios.put(`http://192.168.1.22:8080/user/${id}`, payload);
       
       // Success message dengan info user
       alert(

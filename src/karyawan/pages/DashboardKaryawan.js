@@ -221,7 +221,7 @@ export default function EmployeeDashboard() {
         const user = userData ? JSON.parse(userData) : null;
         setCurrentUser(user);
 
-        const res = await fetch("http://localhost:8080/users");
+        const res = await fetch("http://192.168.1.22:8080/users");
         const data = await res.json();
         const normalizedData = data.map(project => ({
           ...project,
@@ -248,7 +248,7 @@ export default function EmployeeDashboard() {
   const handleViewClick = async (projectId) => {
     setModalLoading(true);
     try {
-      const result = await axios.get(`http://localhost:8080/user/${projectId}`);
+      const result = await axios.get(`http://192.168.1.22:8080/user/${projectId}`);
       setModalUser(result.data);
     } catch (error) {
       console.error("Error loading user:", error);

@@ -56,7 +56,7 @@ export default function NavbarI({ toggleSidebar }) {
 
   const checkInvalidDates = async () => {
     try {
-      const result = await axios.get("http://localhost:8080/users");
+      const result = await axios.get("http://192.168.1.22:8080/users");
       const users = result.data || [];
 
       const invalid = users
@@ -80,7 +80,7 @@ export default function NavbarI({ toggleSidebar }) {
 
   const checkNewProjects = async () => {
     try {
-      const result = await axios.get("http://localhost:8080/users");
+      const result = await axios.get("http://192.168.1.22:8080/users");
       const users = result.data || [];
 
       const today = new Date();

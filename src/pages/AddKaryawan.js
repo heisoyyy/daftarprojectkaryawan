@@ -17,7 +17,7 @@ const AddKaryawan = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:8080/auth/users");
+      const res = await fetch("http://192.168.1.22:8080/auth/users");
       const data = await res.json();
       setAllUsers(data);
     } catch (err) {
@@ -36,7 +36,7 @@ const AddKaryawan = () => {
     const newUser = { username, password, fullName };
 
     try {
-      const response = await fetch("http://localhost:8080/auth/register", {
+      const response = await fetch("http://192.168.1.22:8080/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
@@ -71,7 +71,7 @@ const AddKaryawan = () => {
   const handleDeleteUser = async (id, username) => {
     if (window.confirm(`Yakin ingin menghapus user "${username}"?`)) {
       try {
-        const response = await fetch(`http://localhost:8080/auth/users/${id}`, {
+        const response = await fetch(`http://192.168.1.22:8080/auth/users/${id}`, {
           method: "DELETE",
         });
 

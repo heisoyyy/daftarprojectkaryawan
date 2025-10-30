@@ -41,7 +41,7 @@ export default function NavbarI({ toggleSidebar }) {
       //   return;
       // }
 
-      const result = await axios.get("http://localhost:8080/users", {
+      const result = await axios.get("http://192.168.1.22:8080/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

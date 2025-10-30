@@ -152,7 +152,7 @@ export default function Home() {
 
   const loadUser = async () => {
     try {
-      const result = await axios.get("http://localhost:8080/users");
+      const result = await axios.get("http://192.168.1.22:8080/users");
       setUsers(result.data);
     } catch (error) {
       console.error("Error loading users:", error);
@@ -167,7 +167,7 @@ export default function Home() {
     
     if (window.confirm("⚠️ Apakah Anda yakin ingin menghapus project ini?\n\nAksi ini akan tercatat di History.")) {
       try {
-        await axios.delete(`http://localhost:8080/user/${id}`);
+        await axios.delete(`http://192.168.1.22:8080/user/${id}`);
         
         alert(
           `✅ Project berhasil dihapus!\n\n` +
@@ -353,7 +353,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:8080/users/import/csv", formData, {
+      const response = await axios.post("http://192.168.1.22:8080/users/import/csv", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       
@@ -394,7 +394,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:8080/users/import/excel", formData, {
+      const response = await axios.post("http://192.168.1.22:8080/users/import/excel", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       

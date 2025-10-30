@@ -11,7 +11,7 @@ export default function ViewUser() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const result = await axios.get(`http://localhost:8080/user/${id}`);
+        const result = await axios.get(`http://192.168.1.22:8080/user/${id}`);
         setUser(result.data);
       } catch (error) {
         console.error("Error loading user:", error);

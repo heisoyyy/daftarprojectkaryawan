@@ -59,7 +59,7 @@ export default function Grafik1() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/users");
+        const res = await axios.get("http://192.168.1.22:8080/users");
         setProjects(res.data || []);
       } catch (err) {
         console.error(err);

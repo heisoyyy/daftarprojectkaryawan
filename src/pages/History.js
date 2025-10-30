@@ -34,7 +34,7 @@ export default function History() {
 
   const loadHistory = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/history');
+      const response = await axios.get('http://192.168.1.22:8080/api/history');
       setHistoryData(response.data);
       setLoading(false);
     } catch (error) {
@@ -286,20 +286,20 @@ export default function History() {
 
           {/* Table */}
           <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-dark">
+            <table className="table table-hover align-middle text-center">  
+              <thead className="table-dark text-center">
                 <tr>
-                  <th className="text-center" style={{ width: '50px' }}>#</th>
+                  <th style={{ width: '50px' }}>#</th>
                   <th style={{ width: '90px' }}>Aksi</th>
                   <th style={{ width: '70px' }}>ID</th>
                   <th style={{ width: '120px' }}>User</th>
                   <th style={{ width: '80px' }}>Role</th>
-                  <th>Perubahan</th>
+                  <th style={{ minWidth: '350px' }}>Perubahan</th>
                   <th style={{ width: '160px' }}>Waktu</th>
-                  <th style={{ width: '110px' }}>IP</th>
-                  <th style={{ width: '90px' }} className="text-center">Aksi</th>
+                  <th style={{ width: '90px' }}>Aksi</th>
                 </tr>
               </thead>
+
               <tbody>
                 {currentItems.length === 0 ? (
                   <tr>
@@ -311,24 +311,31 @@ export default function History() {
                 ) : (
                   currentItems.map((item, index) => (
                     <tr key={item.id}>
-                      <td className="text-center">{indexOfFirstItem + index + 1}</td>
+                      <td>{indexOfFirstItem + index + 1}</td>
                       <td>{getActionBadge(item.action)}</td>
                       <td className="text-muted">#{item.entityId}</td>
                       <td>{item.username}</td>
                       <td>{getRoleBadge(item.role)}</td>
+
+                      {/* 🔹 Kolom Perubahan rata tengah dan teks dipotong rapi */}
                       <td>
                         <div
-                          className="text-muted small text-truncate"
-                          style={{ maxWidth: '300px' }}
+                          className="text-muted small mx-auto"
+                          style={{
+                            maxWidth: '350px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
                           title={item.changes}
                         >
                           {item.changes?.substring(0, 80)}
                           {item.changes?.length > 80 && '...'}
                         </div>
                       </td>
+
                       <td className="small">{formatTimestamp(item.timestamp)}</td>
-                      <td className="text-muted small">{item.ipAddress}</td>
-                      <td className="text-center">
+                      <td>
                         <Button
                           size="sm"
                           variant="outline-primary"
@@ -343,6 +350,7 @@ export default function History() {
               </tbody>
             </table>
           </div>
+
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -387,9 +395,6 @@ export default function History() {
 
               <div className="col-md-6">
                 <strong>Waktu:</strong> {formatTimestamp(selectedHistory.timestamp)}
-              </div>
-              <div className="col-md-6">
-                <strong>IP Address:</strong> <code>{selectedHistory.ipAddress}</code>
               </div>
 
               <div className="col-12">

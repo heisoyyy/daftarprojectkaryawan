@@ -82,7 +82,7 @@ export default function AddUser() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/users");
+        const response = await axios.get("http://192.168.1.22:8080/users");
         const projects = response.data || [];
 
         // Extract unique picNames and statuses
@@ -174,7 +174,7 @@ export default function AddUser() {
         statusDokumenBrdOrChangeRequest: user.statusDokumenBrdOrChangeRequest || "-"
       };
 
-      await axios.post("http://localhost:8080/user", payload);
+      await axios.post("http://192.168.1.22:8080/user", payload);
       
       alert(
         `✅ Project berhasil ditambahkan!\n\n` +
