@@ -1,11 +1,89 @@
+/* Navbar Styles */
 .btn-toggle-sidebar {
   background: none;
   border: none;
   font-size: 20px;
   color: white;
   cursor: pointer;
+  padding: 8px;
 }
 
 .btn-toggle-sidebar:hover {
   color: #ffc107;
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.navbar-brand {
+  font-size: 1.1rem;
+}
+
+/* Responsive untuk Mobile */
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 0.9rem;
+  }
+
+  .navbar img {
+    height: 16px !important;
+    margin-right: 8px !important;
+  }
+
+  .btn-toggle-sidebar {
+    font-size: 18px;
+    padding: 6px;
+  }
+
+  /* Warning button di mobile */
+  .btn-warning {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .btn-warning .bi {
+    font-size: 0.9rem;
+  }
+
+  /* Alert warning popup */
+  .alert-warning {
+    max-width: 90vw !important;
+    right: 5vw !important;
+    top: 60px !important;
+    font-size: 0.9rem;
+  }
+
+  .alert-warning h5 {
+    font-size: 1rem;
+  }
+
+  .alert-warning h6 {
+    font-size: 0.9rem;
+  }
+
+  .alert-warning small {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 0.8rem;
+  }
+
+  .navbar img {
+    height: 14px !important;
+  }
+
+  /* Sembunyikan teks "Peringatan" di mobile kecil */
+  .btn-warning {
+    padding: 6px 8px;
+  }
+
+  .btn-warning-text {
+    display: none;
+  }
 }
